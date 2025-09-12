@@ -11,7 +11,7 @@ interface Application {
   requisitionName: string;
   applicationStatus: string;
   hiringManager: string;
-  offerStatus: string;
+  recruiter: string;
   appliedDate: string;
   avatar?: string;
   location: string;
@@ -51,7 +51,7 @@ export const JobApplicationsView: React.FC<JobApplicationsViewProps> = ({ onGene
       requisitionName: 'Senior Software Engineer',
       applicationStatus: 'Interview Scheduled',
       hiringManager: 'David Chen',
-      offerStatus: 'Pending',
+      recruiter: 'Sarah Martinez',
       appliedDate: '2024-01-15',
       location: 'San Francisco, CA',
       country: 'United States',
@@ -67,7 +67,7 @@ export const JobApplicationsView: React.FC<JobApplicationsViewProps> = ({ onGene
       requisitionName: 'Senior Software Engineer',
       applicationStatus: 'Technical Review',
       hiringManager: 'David Chen',
-      offerStatus: 'Not Applicable',
+      recruiter: 'Sarah Martinez',
       appliedDate: '2024-01-12',
       location: 'San Francisco, CA',
       country: 'United States',
@@ -83,7 +83,7 @@ export const JobApplicationsView: React.FC<JobApplicationsViewProps> = ({ onGene
       requisitionName: 'Senior Software Engineer',
       applicationStatus: 'New',
       hiringManager: 'David Chen',
-      offerStatus: 'Not Applicable',
+      recruiter: 'Mike Johnson',
       appliedDate: '2024-01-18',
       location: 'San Francisco, CA',
       country: 'United States'
@@ -96,9 +96,9 @@ export const JobApplicationsView: React.FC<JobApplicationsViewProps> = ({ onGene
       phone: '+1 (555) 456-7890',
       requisitionId: 'REQ-2024-001',
       requisitionName: 'Senior Software Engineer',
-      applicationStatus: 'Offer Extended',
+      applicationStatus: 'Hired',
       hiringManager: 'David Chen',
-      offerStatus: 'Extended',
+      recruiter: 'Sarah Martinez',
       appliedDate: '2024-01-08',
       location: 'San Francisco, CA',
       country: 'United States',
@@ -115,7 +115,7 @@ export const JobApplicationsView: React.FC<JobApplicationsViewProps> = ({ onGene
       requisitionName: 'Product Manager',
       applicationStatus: 'Phone Screen',
       hiringManager: 'Jennifer Martinez',
-      offerStatus: 'Not Applicable',
+      recruiter: 'Lisa Chen',
       appliedDate: '2024-01-20',
       location: 'New York, NY',
       country: 'United States',
@@ -129,9 +129,9 @@ export const JobApplicationsView: React.FC<JobApplicationsViewProps> = ({ onGene
       phone: '+1 (555) 678-9012',
       requisitionId: 'REQ-2024-002',
       requisitionName: 'Product Manager',
-      applicationStatus: 'Background Check',
+      applicationStatus: 'Offer Approved',
       hiringManager: 'Jennifer Martinez',
-      offerStatus: 'Pending',
+      recruiter: 'Lisa Chen',
       appliedDate: '2024-01-10',
       location: 'New York, NY',
       country: 'United States'
@@ -146,7 +146,7 @@ export const JobApplicationsView: React.FC<JobApplicationsViewProps> = ({ onGene
       requisitionName: 'Product Manager',
       applicationStatus: 'Rejected',
       hiringManager: 'Jennifer Martinez',
-      offerStatus: 'Not Applicable',
+      recruiter: 'Mike Johnson',
       appliedDate: '2024-01-05',
       location: 'New York, NY',
       country: 'United States'
@@ -162,7 +162,7 @@ export const JobApplicationsView: React.FC<JobApplicationsViewProps> = ({ onGene
       requisitionName: 'UX Designer',
       applicationStatus: 'Portfolio Review',
       hiringManager: 'Sarah Davis',
-      offerStatus: 'Not Applicable',
+      recruiter: 'Tom Wilson',
       appliedDate: '2024-01-22',
       location: 'Austin, TX',
       country: 'United States'
@@ -175,9 +175,9 @@ export const JobApplicationsView: React.FC<JobApplicationsViewProps> = ({ onGene
       phone: '+1 (555) 901-2345',
       requisitionId: 'REQ-2024-003',
       requisitionName: 'UX Designer',
-      applicationStatus: 'Final Interview',
+      applicationStatus: 'Ready to Hire',
       hiringManager: 'Sarah Davis',
-      offerStatus: 'Pending',
+      recruiter: 'Tom Wilson',
       appliedDate: '2024-01-14',
       location: 'Austin, TX',
       country: 'United States',
@@ -207,12 +207,17 @@ export const JobApplicationsView: React.FC<JobApplicationsViewProps> = ({ onGene
         'Technical Review',
         'Interview Scheduled',
         'Final Interview',
-        'Background Check',
+        'Offer Approval',
+        'Offer Approved',
         'Offer Extended',
+        'Offer Accepted',
+        'Offer Declined',
+        'Ready to Hire',
+        'Hired',
         'Rejected',
         'Withdrawn',
         'Portfolio Review'
-      ][i % 10],
+      ][i % 13],
       hiringManager: [
         'David Chen',
         'Jennifer Martinez',
@@ -223,12 +228,12 @@ export const JobApplicationsView: React.FC<JobApplicationsViewProps> = ({ onGene
         'Emily Rodriguez',
         'James Wilson'
       ][i % 8],
-      offerStatus: [
-        'Not Applicable',
-        'Pending',
-        'Extended',
-        'Accepted',
-        'Declined'
+      recruiter: [
+        'Sarah Martinez',
+        'Lisa Chen',
+        'Mike Johnson',
+        'Tom Wilson',
+        'Amy Rodriguez'
       ][i % 5],
       appliedDate: `2024-01-${String(Math.floor(Math.random() * 28) + 1).padStart(2, '0')}`,
       location: [
@@ -258,10 +263,13 @@ export const JobApplicationsView: React.FC<JobApplicationsViewProps> = ({ onGene
 
   // Statuses eligible for document generation
   const eligibleStatuses = [
+    'Offer Approval',
+    'Offer Approved',
     'Offer Extended',
-    'Background Check',
-    'Final Interview',
+    'Offer Accepted',
+    'Ready to Hire',
     'Hired',
+    'Final Interview',
     'Onboarding'
   ];
 
@@ -296,7 +304,7 @@ export const JobApplicationsView: React.FC<JobApplicationsViewProps> = ({ onGene
         break;
       case 'Pending Offers':
         filtered = applications.filter(app => 
-          app.offerStatus === 'Pending' || app.offerStatus === 'Extended'
+          ['Offer Approval', 'Offer Approved', 'Offer Extended', 'Offer Accepted'].includes(app.applicationStatus)
         );
         break;
       default:
@@ -352,22 +360,16 @@ export const JobApplicationsView: React.FC<JobApplicationsViewProps> = ({ onGene
       'Technical Review': 'bg-purple-100 text-purple-800',
       'Interview Scheduled': 'bg-indigo-100 text-indigo-800',
       'Final Interview': 'bg-orange-100 text-orange-800',
-      'Background Check': 'bg-cyan-100 text-cyan-800',
+      'Offer Approval': 'bg-yellow-100 text-yellow-800',
+      'Offer Approved': 'bg-blue-100 text-blue-800',
       'Offer Extended': 'bg-green-100 text-green-800',
+      'Offer Accepted': 'bg-green-200 text-green-900',
+      'Offer Declined': 'bg-red-100 text-red-800',
+      'Ready to Hire': 'bg-purple-100 text-purple-800',
+      'Hired': 'bg-emerald-100 text-emerald-800',
       'Rejected': 'bg-red-100 text-red-800',
       'Withdrawn': 'bg-gray-100 text-gray-800',
       'Portfolio Review': 'bg-pink-100 text-pink-800'
-    };
-    return colors[status] || 'bg-gray-100 text-gray-800';
-  };
-
-  const getOfferStatusColor = (status: string) => {
-    const colors: Record<string, string> = {
-      'Not Applicable': 'bg-gray-100 text-gray-600',
-      'Pending': 'bg-yellow-100 text-yellow-800',
-      'Extended': 'bg-blue-100 text-blue-800',
-      'Accepted': 'bg-green-100 text-green-800',
-      'Declined': 'bg-red-100 text-red-800'
     };
     return colors[status] || 'bg-gray-100 text-gray-800';
   };
@@ -562,7 +564,7 @@ export const JobApplicationsView: React.FC<JobApplicationsViewProps> = ({ onGene
                           <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">Application ID</th>
                           <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">Candidate Name</th>
                           <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">Application Status</th>
-                          <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">Offer Status</th>
+                          <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">Recruiter</th>
                           <th className="w-12"></th>
                         </tr>
                       </thead>
@@ -614,9 +616,7 @@ export const JobApplicationsView: React.FC<JobApplicationsViewProps> = ({ onGene
                               </span>
                             </td>
                             <td className="py-3 px-4">
-                              <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getOfferStatusColor(app.offerStatus)}`}>
-                                {app.offerStatus}
-                              </span>
+                              <span className="text-sm text-gray-900">{app.recruiter}</span>
                             </td>
                             <td className="py-3 px-4">
                               <button className="text-gray-400 hover:text-gray-600 transition-colors">
