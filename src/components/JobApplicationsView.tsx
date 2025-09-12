@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Search, Filter, User, Briefcase, Calendar, MapPin, Eye, Star, ChevronDown, ChevronRight, Users, Building2, Globe, UserCheck, Plus } from 'lucide-react';
+import { Search, Filter, ChevronDown, ChevronRight, Briefcase, MapPin, UserCheck, Plus, Eye } from 'lucide-react';
 
 interface Application {
   id: string;
@@ -8,28 +8,19 @@ interface Application {
   email: string;
   phone: string;
   requisitionId: string;
-  requisitionTitle: string;
-  status: string;
-  country: string;
-  location: string;
+  requisitionName: string;
+  applicationStatus: string;
   hiringManager: string;
-  recruiter: string;
+  offerStatus: string;
   appliedDate: string;
   avatar?: string;
-}
-
-interface Candidate {
-  id: string;
-  name: string;
-  email: string;
-  phone: string;
-  avatar?: string;
-  applications: Application[];
+  location: string;
+  country: string;
 }
 
 interface Requisition {
   id: string;
-  title: string;
+  name: string;
   location: string;
   hiringManager: string;
   applications: Application[];
@@ -42,177 +33,290 @@ interface JobApplicationsViewProps {
 
 export const JobApplicationsView: React.FC<JobApplicationsViewProps> = ({ onGenerate }) => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [viewMode, setViewMode] = useState<'candidates' | 'requisition'>('candidates');
-  const [activeStatusFilters, setActiveStatusFilters] = useState<string[]>([]);
-  const [selectedApplications, setSelectedApplications] = useState<string[]>([]);
-  const [expandedCandidates, setExpandedCandidates] = useState<string[]>([]);
+  const [customFilter, setCustomFilter] = useState('All Applications');
   const [expandedRequisitions, setExpandedRequisitions] = useState<string[]>([]);
   const [selectedRequisitionStatus, setSelectedRequisitionStatus] = useState<Record<string, string>>({});
-  const [showAllStatusChips, setShowAllStatusChips] = useState(false);
+  const [selectedApplications, setSelectedApplications] = useState<Record<string, string[]>>({});
 
-  // Sample data with multiple applications per candidate
+  // Sample data
   const applications: Application[] = [
-    // Maria Santos - 2 applications
+    // REQ-2024-001 - Software Engineer
     {
-      id: 'app-1',
-      candidateId: 'cand-1',
-      candidateName: 'Maria Santos',
-      email: 'maria.santos@email.com',
-      phone: '+63 917 123 4567',
-      requisitionId: 'REQ-1001',
-      requisitionTitle: 'Software Engineer',
-      status: 'Interview',
-      country: 'Philippines',
-      location: 'Manila, Philippines',
+      id: 'APP-001',
+      candidateId: 'CAND-001',
+      candidateName: 'Sarah Johnson',
+      email: 'sarah.johnson@email.com',
+      phone: '+1 (555) 123-4567',
+      requisitionId: 'REQ-2024-001',
+      requisitionName: 'Senior Software Engineer',
+      applicationStatus: 'Interview Scheduled',
       hiringManager: 'David Chen',
-      recruiter: 'John Tan',
+      offerStatus: 'Pending',
       appliedDate: '2024-01-15',
-      avatar: 'https://images.pexels.com/photos/774909/pexels-photo-774909.jpeg?auto=compress&cs=tinysrgb&w=64&h=64&dpr=2'
-    },
-    {
-      id: 'app-2',
-      candidateId: 'cand-1',
-      candidateName: 'Maria Santos',
-      email: 'maria.santos@email.com',
-      phone: '+63 917 123 4567',
-      requisitionId: 'REQ-1003',
-      requisitionTitle: 'Sales Executive',
-      status: 'Screening',
+      location: 'San Francisco, CA',
       country: 'United States',
-      location: 'New York, NY',
-      hiringManager: 'Jennifer Wilson',
-      recruiter: 'Sarah Lee',
-      appliedDate: '2024-01-12',
       avatar: 'https://images.pexels.com/photos/774909/pexels-photo-774909.jpeg?auto=compress&cs=tinysrgb&w=64&h=64&dpr=2'
     },
-    // James Carter - 3 applications
     {
-      id: 'app-3',
-      candidateId: 'cand-2',
-      candidateName: 'James Carter',
-      email: 'james.carter@email.com',
-      phone: '+65 8123 4567',
-      requisitionId: 'REQ-1002',
-      requisitionTitle: 'Product Manager',
-      status: 'Background Check',
-      country: 'Singapore',
-      location: 'Singapore',
-      hiringManager: 'Lisa Wang',
-      recruiter: 'Mei Lin',
-      appliedDate: '2024-01-10',
-      avatar: 'https://images.pexels.com/photos/1222271/pexels-photo-1222271.jpeg?auto=compress&cs=tinysrgb&w=64&h=64&dpr=2'
-    },
-    {
-      id: 'app-4',
-      candidateId: 'cand-2',
-      candidateName: 'James Carter',
-      email: 'james.carter@email.com',
-      phone: '+65 8123 4567',
-      requisitionId: 'REQ-1004',
-      requisitionTitle: 'HR Specialist',
-      status: 'Offer',
-      country: 'Germany',
-      location: 'Berlin, Germany',
-      hiringManager: 'Klaus Weber',
-      recruiter: 'Hans Müller',
-      appliedDate: '2024-01-08',
-      avatar: 'https://images.pexels.com/photos/1222271/pexels-photo-1222271.jpeg?auto=compress&cs=tinysrgb&w=64&h=64&dpr=2'
-    },
-    {
-      id: 'app-5',
-      candidateId: 'cand-2',
-      candidateName: 'James Carter',
-      email: 'james.carter@email.com',
-      phone: '+65 8123 4567',
-      requisitionId: 'REQ-1005',
-      requisitionTitle: 'QA Analyst',
-      status: 'Technical Interview',
-      country: 'India',
-      location: 'Bangalore, India',
-      hiringManager: 'Raj Patel',
-      recruiter: 'Priya Sharma',
-      appliedDate: '2024-01-05',
-      avatar: 'https://images.pexels.com/photos/1222271/pexels-photo-1222271.jpeg?auto=compress&cs=tinysrgb&w=64&h=64&dpr=2'
-    },
-    // Aiko Tanaka - 2 applications
-    {
-      id: 'app-6',
-      candidateId: 'cand-3',
-      candidateName: 'Aiko Tanaka',
-      email: 'aiko.tanaka@email.com',
-      phone: '+81 90 1234 5678',
-      requisitionId: 'REQ-1001',
-      requisitionTitle: 'Software Engineer',
-      status: 'New',
-      country: 'Philippines',
-      location: 'Manila, Philippines',
+      id: 'APP-002',
+      candidateId: 'CAND-002',
+      candidateName: 'Michael Rodriguez',
+      email: 'michael.rodriguez@email.com',
+      phone: '+1 (555) 234-5678',
+      requisitionId: 'REQ-2024-001',
+      requisitionName: 'Senior Software Engineer',
+      applicationStatus: 'Technical Review',
       hiringManager: 'David Chen',
-      recruiter: 'John Tan',
-      appliedDate: '2024-01-14',
-      avatar: 'https://images.pexels.com/photos/1239291/pexels-photo-1239291.jpeg?auto=compress&cs=tinysrgb&w=64&h=64&dpr=2'
+      offerStatus: 'Not Applicable',
+      appliedDate: '2024-01-12',
+      location: 'San Francisco, CA',
+      country: 'United States',
+      avatar: 'https://images.pexels.com/photos/1222271/pexels-photo-1222271.jpeg?auto=compress&cs=tinysrgb&w=64&h=64&dpr=2'
     },
     {
-      id: 'app-7',
-      candidateId: 'cand-3',
-      candidateName: 'Aiko Tanaka',
-      email: 'aiko.tanaka@email.com',
-      phone: '+81 90 1234 5678',
-      requisitionId: 'REQ-1002',
-      requisitionTitle: 'Product Manager',
-      status: 'Approval',
-      country: 'Singapore',
-      location: 'Singapore',
-      hiringManager: 'Lisa Wang',
-      recruiter: 'Mei Lin',
-      appliedDate: '2024-01-11',
+      id: 'APP-003',
+      candidateId: 'CAND-003',
+      candidateName: 'Emily Chen',
+      email: 'emily.chen@email.com',
+      phone: '+1 (555) 345-6789',
+      requisitionId: 'REQ-2024-001',
+      requisitionName: 'Senior Software Engineer',
+      applicationStatus: 'New',
+      hiringManager: 'David Chen',
+      offerStatus: 'Not Applicable',
+      appliedDate: '2024-01-18',
+      location: 'San Francisco, CA',
+      country: 'United States'
+    },
+    {
+      id: 'APP-004',
+      candidateId: 'CAND-004',
+      candidateName: 'James Wilson',
+      email: 'james.wilson@email.com',
+      phone: '+1 (555) 456-7890',
+      requisitionId: 'REQ-2024-001',
+      requisitionName: 'Senior Software Engineer',
+      applicationStatus: 'Offer Extended',
+      hiringManager: 'David Chen',
+      offerStatus: 'Extended',
+      appliedDate: '2024-01-08',
+      location: 'San Francisco, CA',
+      country: 'United States',
       avatar: 'https://images.pexels.com/photos/1239291/pexels-photo-1239291.jpeg?auto=compress&cs=tinysrgb&w=64&h=64&dpr=2'
     },
-    // Additional candidates with single applications
-    ...Array.from({ length: 150 }, (_, i) => ({
-      id: `app-${i + 8}`,
-      candidateId: `cand-${i + 4}`,
-      candidateName: `Candidate ${i + 4}`,
-      email: `candidate${i + 4}@email.com`,
+    // REQ-2024-002 - Product Manager
+    {
+      id: 'APP-005',
+      candidateId: 'CAND-005',
+      candidateName: 'Lisa Thompson',
+      email: 'lisa.thompson@email.com',
+      phone: '+1 (555) 567-8901',
+      requisitionId: 'REQ-2024-002',
+      requisitionName: 'Product Manager',
+      applicationStatus: 'Phone Screen',
+      hiringManager: 'Jennifer Martinez',
+      offerStatus: 'Not Applicable',
+      appliedDate: '2024-01-20',
+      location: 'New York, NY',
+      country: 'United States',
+      avatar: 'https://images.pexels.com/photos/1181519/pexels-photo-1181519.jpeg?auto=compress&cs=tinysrgb&w=64&h=64&dpr=2'
+    },
+    {
+      id: 'APP-006',
+      candidateId: 'CAND-006',
+      candidateName: 'Robert Kim',
+      email: 'robert.kim@email.com',
+      phone: '+1 (555) 678-9012',
+      requisitionId: 'REQ-2024-002',
+      requisitionName: 'Product Manager',
+      applicationStatus: 'Background Check',
+      hiringManager: 'Jennifer Martinez',
+      offerStatus: 'Pending',
+      appliedDate: '2024-01-10',
+      location: 'New York, NY',
+      country: 'United States'
+    },
+    {
+      id: 'APP-007',
+      candidateId: 'CAND-007',
+      candidateName: 'Maria Garcia',
+      email: 'maria.garcia@email.com',
+      phone: '+1 (555) 789-0123',
+      requisitionId: 'REQ-2024-002',
+      requisitionName: 'Product Manager',
+      applicationStatus: 'Rejected',
+      hiringManager: 'Jennifer Martinez',
+      offerStatus: 'Not Applicable',
+      appliedDate: '2024-01-05',
+      location: 'New York, NY',
+      country: 'United States'
+    },
+    // REQ-2024-003 - UX Designer
+    {
+      id: 'APP-008',
+      candidateId: 'CAND-008',
+      candidateName: 'Alex Turner',
+      email: 'alex.turner@email.com',
+      phone: '+1 (555) 890-1234',
+      requisitionId: 'REQ-2024-003',
+      requisitionName: 'UX Designer',
+      applicationStatus: 'Portfolio Review',
+      hiringManager: 'Sarah Davis',
+      offerStatus: 'Not Applicable',
+      appliedDate: '2024-01-22',
+      location: 'Austin, TX',
+      country: 'United States'
+    },
+    {
+      id: 'APP-009',
+      candidateId: 'CAND-009',
+      candidateName: 'Nina Patel',
+      email: 'nina.patel@email.com',
+      phone: '+1 (555) 901-2345',
+      requisitionId: 'REQ-2024-003',
+      requisitionName: 'UX Designer',
+      applicationStatus: 'Final Interview',
+      hiringManager: 'Sarah Davis',
+      offerStatus: 'Pending',
+      appliedDate: '2024-01-14',
+      location: 'Austin, TX',
+      country: 'United States',
+      avatar: 'https://images.pexels.com/photos/1239291/pexels-photo-1239291.jpeg?auto=compress&cs=tinysrgb&w=64&h=64&dpr=2'
+    },
+    // Add more sample data
+    ...Array.from({ length: 50 }, (_, i) => ({
+      id: `APP-${String(i + 10).padStart(3, '0')}`,
+      candidateId: `CAND-${String(i + 10).padStart(3, '0')}`,
+      candidateName: `Candidate ${i + 10}`,
+      email: `candidate${i + 10}@email.com`,
       phone: `+1 (555) ${String(Math.floor(Math.random() * 900) + 100)}-${String(Math.floor(Math.random() * 9000) + 1000)}`,
-      requisitionId: `REQ-100${(i % 10) + 1}`,
-      requisitionTitle: ['Software Engineer', 'Product Manager', 'Sales Executive', 'HR Specialist', 'QA Analyst', 'Marketing Manager', 'Data Scientist', 'UX Designer', 'DevOps Engineer', 'Business Analyst'][i % 10],
-      status: ['New', 'Screening', 'Interview', 'Technical Interview', 'Background Check', 'Approval', 'Offer', 'Rejected', 'Withdrawn'][i % 9],
-      country: ['Philippines', 'Singapore', 'United States', 'Germany', 'India', 'Japan', 'Australia', 'Canada'][i % 8],
-      location: ['Manila, Philippines', 'Singapore', 'New York, NY', 'Berlin, Germany', 'Bangalore, India', 'Tokyo, Japan', 'Sydney, Australia', 'Toronto, Canada'][i % 8],
-      hiringManager: ['David Chen', 'Lisa Wang', 'Jennifer Wilson', 'Klaus Weber', 'Raj Patel', 'Yuki Sato', 'Emma Thompson', 'Michael Brown'][i % 8],
-      recruiter: ['John Tan', 'Mei Lin', 'Sarah Lee', 'Hans Müller', 'Priya Sharma', 'Kenji Nakamura', 'Sophie Davis', 'Robert Johnson'][i % 8],
+      requisitionId: `REQ-2024-${String((i % 8) + 1).padStart(3, '0')}`,
+      requisitionName: [
+        'Senior Software Engineer',
+        'Product Manager', 
+        'UX Designer',
+        'Data Scientist',
+        'Marketing Manager',
+        'Sales Representative',
+        'HR Specialist',
+        'DevOps Engineer'
+      ][i % 8],
+      applicationStatus: [
+        'New',
+        'Phone Screen',
+        'Technical Review',
+        'Interview Scheduled',
+        'Final Interview',
+        'Background Check',
+        'Offer Extended',
+        'Rejected',
+        'Withdrawn',
+        'Portfolio Review'
+      ][i % 10],
+      hiringManager: [
+        'David Chen',
+        'Jennifer Martinez',
+        'Sarah Davis',
+        'Michael Brown',
+        'Lisa Wang',
+        'Robert Johnson',
+        'Emily Rodriguez',
+        'James Wilson'
+      ][i % 8],
+      offerStatus: [
+        'Not Applicable',
+        'Pending',
+        'Extended',
+        'Accepted',
+        'Declined'
+      ][i % 5],
       appliedDate: `2024-01-${String(Math.floor(Math.random() * 28) + 1).padStart(2, '0')}`,
+      location: [
+        'San Francisco, CA',
+        'New York, NY',
+        'Austin, TX',
+        'Seattle, WA',
+        'Boston, MA',
+        'Chicago, IL',
+        'Los Angeles, CA',
+        'Denver, CO'
+      ][i % 8],
+      country: 'United States',
       avatar: i % 4 === 0 ? `https://images.pexels.com/photos/${1000000 + i}/pexels-photo-${1000000 + i}.jpeg?auto=compress&cs=tinysrgb&w=64&h=64&dpr=2` : undefined
     }))
   ];
 
-  // Group applications by candidate
-  const candidatesMap = useMemo(() => {
-    const map = new Map<string, Candidate>();
-    applications.forEach(app => {
-      if (!map.has(app.candidateId)) {
-        map.set(app.candidateId, {
-          id: app.candidateId,
-          name: app.candidateName,
-          email: app.email,
-          phone: app.phone,
-          avatar: app.avatar,
-          applications: []
+  // Custom filter options
+  const customFilterOptions = [
+    'All Applications',
+    'My Candidates',
+    'Open Applications',
+    'High Priority Reqs',
+    'Recent Applications',
+    'Pending Offers'
+  ];
+
+  // Apply custom filters
+  const getFilteredApplications = () => {
+    let filtered = applications;
+
+    // Apply custom filter logic (simplified for demo)
+    switch (customFilter) {
+      case 'My Candidates':
+        filtered = applications.filter(app => 
+          ['David Chen', 'Jennifer Martinez', 'Sarah Davis'].includes(app.hiringManager)
+        );
+        break;
+      case 'Open Applications':
+        filtered = applications.filter(app => 
+          !['Rejected', 'Withdrawn', 'Offer Extended'].includes(app.applicationStatus)
+        );
+        break;
+      case 'High Priority Reqs':
+        filtered = applications.filter(app => 
+          ['REQ-2024-001', 'REQ-2024-002'].includes(app.requisitionId)
+        );
+        break;
+      case 'Recent Applications':
+        filtered = applications.filter(app => {
+          const appDate = new Date(app.appliedDate);
+          const weekAgo = new Date();
+          weekAgo.setDate(weekAgo.getDate() - 7);
+          return appDate >= weekAgo;
         });
-      }
-      map.get(app.candidateId)!.applications.push(app);
-    });
-    return map;
-  }, [applications]);
+        break;
+      case 'Pending Offers':
+        filtered = applications.filter(app => 
+          app.offerStatus === 'Pending' || app.offerStatus === 'Extended'
+        );
+        break;
+      default:
+        filtered = applications;
+    }
+
+    // Apply search filter
+    if (searchTerm) {
+      filtered = filtered.filter(app =>
+        app.candidateName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        app.requisitionId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        app.requisitionName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        app.applicationStatus.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    return filtered;
+  };
 
   // Group applications by requisition
   const requisitionsMap = useMemo(() => {
+    const filtered = getFilteredApplications();
     const map = new Map<string, Requisition>();
-    applications.forEach(app => {
+    
+    filtered.forEach(app => {
       if (!map.has(app.requisitionId)) {
         map.set(app.requisitionId, {
           id: app.requisitionId,
-          title: app.requisitionTitle,
+          name: app.requisitionName,
           location: app.location,
           hiringManager: app.hiringManager,
           applications: [],
@@ -221,111 +325,41 @@ export const JobApplicationsView: React.FC<JobApplicationsViewProps> = ({ onGene
       }
       const req = map.get(app.requisitionId)!;
       req.applications.push(app);
-      req.statusCounts[app.status] = (req.statusCounts[app.status] || 0) + 1;
+      req.statusCounts[app.applicationStatus] = (req.statusCounts[app.applicationStatus] || 0) + 1;
     });
-    return map;
-  }, [applications]);
-
-  // Get all unique statuses with counts
-  const allStatuses = useMemo(() => {
-    const statusCounts: Record<string, number> = {};
-    applications.forEach(app => {
-      statusCounts[app.status] = (statusCounts[app.status] || 0) + 1;
-    });
-    return Object.entries(statusCounts)
-      .sort(([, a], [, b]) => b - a)
-      .map(([status, count]) => ({ status, count }));
-  }, [applications]);
-
-  // Filter applications
-  const filteredApplications = useMemo(() => {
-    return applications.filter(app => {
-      const matchesSearch = app.candidateName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           app.requisitionId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           app.requisitionTitle.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesStatus = activeStatusFilters.length === 0 || activeStatusFilters.includes(app.status);
-      return matchesSearch && matchesStatus;
-    });
-  }, [applications, searchTerm, activeStatusFilters]);
-
-  // Get filtered candidates
-  const filteredCandidates = useMemo(() => {
-    const candidateIds = new Set(filteredApplications.map(app => app.candidateId));
-    return Array.from(candidatesMap.values()).filter(candidate => 
-      candidateIds.has(candidate.id)
-    ).map(candidate => ({
-      ...candidate,
-      applications: candidate.applications.filter(app => 
-        filteredApplications.some(filtered => filtered.id === app.id)
-      )
-    }));
-  }, [candidatesMap, filteredApplications]);
-
-  // Get filtered requisitions
-  const filteredRequisitions = useMemo(() => {
-    const requisitionIds = new Set(filteredApplications.map(app => app.requisitionId));
-    return Array.from(requisitionsMap.values()).filter(req => 
-      requisitionIds.has(req.id)
-    ).map(req => ({
-      ...req,
-      applications: req.applications.filter(app => 
-        filteredApplications.some(filtered => filtered.id === app.id)
-      )
-    }));
-  }, [requisitionsMap, filteredApplications]);
+    
+    return Array.from(map.values());
+  }, [searchTerm, customFilter]);
 
   const getStatusColor = (status: string) => {
     const colors: Record<string, string> = {
       'New': 'bg-blue-100 text-blue-800',
-      'Screening': 'bg-yellow-100 text-yellow-800',
-      'Interview': 'bg-purple-100 text-purple-800',
-      'Technical Interview': 'bg-indigo-100 text-indigo-800',
-      'Background Check': 'bg-orange-100 text-orange-800',
-      'Approval': 'bg-cyan-100 text-cyan-800',
-      'Offer': 'bg-green-100 text-green-800',
+      'Phone Screen': 'bg-yellow-100 text-yellow-800',
+      'Technical Review': 'bg-purple-100 text-purple-800',
+      'Interview Scheduled': 'bg-indigo-100 text-indigo-800',
+      'Final Interview': 'bg-orange-100 text-orange-800',
+      'Background Check': 'bg-cyan-100 text-cyan-800',
+      'Offer Extended': 'bg-green-100 text-green-800',
       'Rejected': 'bg-red-100 text-red-800',
-      'Withdrawn': 'bg-gray-100 text-gray-800'
+      'Withdrawn': 'bg-gray-100 text-gray-800',
+      'Portfolio Review': 'bg-pink-100 text-pink-800'
+    };
+    return colors[status] || 'bg-gray-100 text-gray-800';
+  };
+
+  const getOfferStatusColor = (status: string) => {
+    const colors: Record<string, string> = {
+      'Not Applicable': 'bg-gray-100 text-gray-600',
+      'Pending': 'bg-yellow-100 text-yellow-800',
+      'Extended': 'bg-blue-100 text-blue-800',
+      'Accepted': 'bg-green-100 text-green-800',
+      'Declined': 'bg-red-100 text-red-800'
     };
     return colors[status] || 'bg-gray-100 text-gray-800';
   };
 
   const getInitials = (name: string) => {
     return name.split(' ').map(n => n[0]).join('').toUpperCase();
-  };
-
-  const toggleStatusFilter = (status: string) => {
-    setActiveStatusFilters(prev => 
-      prev.includes(status) 
-        ? prev.filter(s => s !== status)
-        : [...prev, status]
-    );
-  };
-
-  const toggleApplicationSelection = (applicationId: string) => {
-    setSelectedApplications(prev => 
-      prev.includes(applicationId)
-        ? prev.filter(id => id !== applicationId)
-        : [...prev, applicationId]
-    );
-  };
-
-  const toggleAllCandidateApplications = (candidate: Candidate) => {
-    const candidateAppIds = candidate.applications.map(app => app.id);
-    const allSelected = candidateAppIds.every(id => selectedApplications.includes(id));
-    
-    if (allSelected) {
-      setSelectedApplications(prev => prev.filter(id => !candidateAppIds.includes(id)));
-    } else {
-      setSelectedApplications(prev => [...new Set([...prev, ...candidateAppIds])]);
-    }
-  };
-
-  const toggleCandidateExpansion = (candidateId: string) => {
-    setExpandedCandidates(prev => 
-      prev.includes(candidateId)
-        ? prev.filter(id => id !== candidateId)
-        : [...prev, candidateId]
-    );
   };
 
   const toggleRequisitionExpansion = (requisitionId: string) => {
@@ -346,17 +380,40 @@ export const JobApplicationsView: React.FC<JobApplicationsViewProps> = ({ onGene
   const getFilteredRequisitionApplications = (requisition: Requisition) => {
     const selectedStatus = selectedRequisitionStatus[requisition.id];
     return selectedStatus 
-      ? requisition.applications.filter(app => app.status === selectedStatus)
+      ? requisition.applications.filter(app => app.applicationStatus === selectedStatus)
       : requisition.applications;
   };
 
-  const visibleStatusChips = showAllStatusChips ? allStatuses : allStatuses.slice(0, 6);
-  const hiddenStatusCount = allStatuses.length - 6;
+  const toggleApplicationSelection = (requisitionId: string, applicationId: string) => {
+    setSelectedApplications(prev => {
+      const current = prev[requisitionId] || [];
+      const updated = current.includes(applicationId)
+        ? current.filter(id => id !== applicationId)
+        : [...current, applicationId];
+      
+      return {
+        ...prev,
+        [requisitionId]: updated
+      };
+    });
+  };
+
+  const toggleAllApplicationsInRequisition = (requisition: Requisition) => {
+    const filteredApps = getFilteredRequisitionApplications(requisition);
+    const appIds = filteredApps.map(app => app.id);
+    const currentSelected = selectedApplications[requisition.id] || [];
+    const allSelected = appIds.every(id => currentSelected.includes(id));
+
+    setSelectedApplications(prev => ({
+      ...prev,
+      [requisition.id]: allSelected ? [] : appIds
+    }));
+  };
 
   return (
     <div className="p-6">
       <div className="flex items-center justify-between mb-6">
-        <div className="flex-1 max-w-md">
+        <div className="flex items-center space-x-4">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
             <input
@@ -364,405 +421,256 @@ export const JobApplicationsView: React.FC<JobApplicationsViewProps> = ({ onGene
               placeholder="Search applications..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-80 pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
-        </div>
-        <div className="flex items-center space-x-3 ml-4">
-          <button
-            onClick={onGenerate}
-            className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Generate
-          </button>
-        </div>
-      </div>
-
-      {/* View Mode Toggle */}
-      <div className="mb-4">
-        <div className="flex bg-gray-100 rounded-lg p-1 w-fit">
-          <button
-            onClick={() => setViewMode('candidates')}
-            className={`px-3 py-1 text-sm rounded-md transition-colors ${
-              viewMode === 'candidates'
-                ? 'bg-white text-gray-900 shadow-sm'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            Candidates
-          </button>
-          <button
-            onClick={() => setViewMode('requisition')}
-            className={`px-3 py-1 text-sm rounded-md transition-colors ${
-              viewMode === 'requisition'
-                ? 'bg-white text-gray-900 shadow-sm'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            By Requisition
-          </button>
-        </div>
-      </div>
-
-      {/* Quick Status Filters */}
-      <div className="mb-6">
-        <div className="flex flex-wrap gap-2">
-          {visibleStatusChips.map(({ status, count }) => (
-            <button
-              key={status}
-              onClick={() => toggleStatusFilter(status)}
-              className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium transition-colors ${
-                activeStatusFilters.includes(status)
-                  ? 'bg-blue-100 text-blue-800 ring-2 ring-blue-500'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
+          
+          {/* Custom Filters Dropdown */}
+          <div className="relative">
+            <select
+              value={customFilter}
+              onChange={(e) => setCustomFilter(e.target.value)}
+              className="appearance-none bg-white border border-gray-300 rounded-lg px-4 py-2 pr-8 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
-              {status} ({count})
-            </button>
-          ))}
-          {!showAllStatusChips && hiddenStatusCount > 0 && (
-            <button
-              onClick={() => setShowAllStatusChips(true)}
-              className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200"
-            >
-              +{hiddenStatusCount} More
-            </button>
-          )}
-          {showAllStatusChips && hiddenStatusCount > 0 && (
-            <button
-              onClick={() => setShowAllStatusChips(false)}
-              className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200"
-            >
-              Show Less
-            </button>
-          )}
-        </div>
-        {activeStatusFilters.length > 0 && (
-          <div className="mt-2 flex items-center space-x-2">
-            <span className="text-sm text-gray-600">Active filters:</span>
-            <button
-              onClick={() => setActiveStatusFilters([])}
-              className="text-sm text-blue-600 hover:text-blue-700"
-            >
-              Clear all
-            </button>
+              {customFilterOptions.map(option => (
+                <option key={option} value={option}>{option}</option>
+              ))}
+            </select>
+            <Filter className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 pointer-events-none" />
           </div>
+        </div>
+        
+        <button
+          onClick={onGenerate}
+          className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+        >
+          <Plus className="w-4 h-4 mr-2" />
+          Generate
+        </button>
+      </div>
+
+      {/* Results Summary */}
+      <div className="mb-4 text-sm text-gray-600">
+        Showing {requisitionsMap.length} requisitions with {requisitionsMap.reduce((sum, req) => sum + req.applications.length, 0)} applications
+        {customFilter !== 'All Applications' && (
+          <span className="ml-2 px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
+            Filter: {customFilter}
+          </span>
         )}
       </div>
 
-      {/* Content based on view mode */}
-      {viewMode === 'candidates' ? (
-        /* Candidates View */
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-gray-200">
-                <th className="w-12 py-4 px-6">
-                  <input
-                    type="checkbox"
-                    className="rounded border-gray-300"
-                    onChange={() => {}}
-                  />
-                </th>
-                <th className="text-left py-4 px-6 font-medium text-gray-900">Candidate</th>
-                <th className="text-left py-4 px-6 font-medium text-gray-900">Primary Application</th>
-                <th className="text-left py-4 px-6 font-medium text-gray-900">Status</th>
-                <th className="text-left py-4 px-6 font-medium text-gray-900">Location</th>
-                <th className="text-left py-4 px-6 font-medium text-gray-900">Recruiter</th>
-                <th className="w-12"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredCandidates.map((candidate) => {
-                const primaryApp = candidate.applications[0];
-                const isExpanded = expandedCandidates.includes(candidate.id);
-                const hasMultipleApps = candidate.applications.length > 1;
+      {/* Requisition Accordions */}
+      <div className="space-y-4">
+        {requisitionsMap.map((requisition) => {
+          const isExpanded = expandedRequisitions.includes(requisition.id);
+          const filteredApps = getFilteredRequisitionApplications(requisition);
+          const selectedStatus = selectedRequisitionStatus[requisition.id];
+          const selectedApps = selectedApplications[requisition.id] || [];
 
-                return (
-                  <React.Fragment key={candidate.id}>
-                    <tr className="hover:bg-gray-50 border-b border-gray-100">
-                      <td className="py-4 px-6">
-                        <input
-                          type="checkbox"
-                          checked={candidate.applications.every(app => selectedApplications.includes(app.id))}
-                          onChange={() => toggleAllCandidateApplications(candidate)}
-                          className="rounded border-gray-300"
-                        />
-                      </td>
-                      <td className="py-4 px-6">
-                        <div className="flex items-center space-x-3">
-                          {candidate.avatar ? (
-                            <img
-                              src={candidate.avatar}
-                              alt={candidate.name}
-                              className="w-10 h-10 rounded-full object-cover"
-                            />
-                          ) : (
-                            <div className="w-10 h-10 bg-indigo-500 rounded-full flex items-center justify-center">
-                              <span className="text-white text-sm font-medium">
-                                {getInitials(candidate.name)}
-                              </span>
-                            </div>
-                          )}
-                          <div>
-                            <div className="font-medium text-gray-900">{candidate.name}</div>
-                            <div className="text-sm text-gray-500">{candidate.email}</div>
-                            {hasMultipleApps && (
-                              <div className="text-xs text-blue-600">
-                                {candidate.applications.length} applications
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </td>
-                      <td className="py-4 px-6">
-                        <div>
-                          <div className="font-medium text-gray-900">
-                            {primaryApp.requisitionId} - {primaryApp.requisitionTitle}
-                          </div>
-                          <div className="text-sm text-gray-500 flex items-center mt-1">
-                            <Globe className="w-3 h-3 mr-1" />
-                            {primaryApp.country}
-                          </div>
-                        </div>
-                      </td>
-                      <td className="py-4 px-6">
-                        <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(primaryApp.status)}`}>
-                          {primaryApp.status}
-                        </span>
-                      </td>
-                      <td className="py-4 px-6">
-                        <div className="flex items-center text-gray-600">
-                          <MapPin className="w-4 h-4 mr-2" />
-                          {primaryApp.location}
-                        </div>
-                      </td>
-                      <td className="py-4 px-6 text-gray-600">
-                        {primaryApp.recruiter}
-                      </td>
-                      <td className="py-4 px-6">
-                        <div className="flex items-center space-x-2">
-                          {hasMultipleApps && (
-                            <button
-                              onClick={() => toggleCandidateExpansion(candidate.id)}
-                              className="text-gray-400 hover:text-gray-600"
-                            >
-                              {isExpanded ? (
-                                <ChevronDown className="w-4 h-4" />
-                              ) : (
-                                <ChevronRight className="w-4 h-4" />
-                              )}
-                            </button>
-                          )}
-                          <button className="text-gray-400 hover:text-gray-600">
-                            <Eye className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                    {isExpanded && hasMultipleApps && (
-                      <tr>
-                        <td colSpan={7} className="px-6 py-4 bg-gray-50">
-                          <div className="ml-8">
-                            <h4 className="text-sm font-medium text-gray-900 mb-3">All Applications</h4>
-                            <div className="bg-white rounded-lg border border-gray-200">
-                              <table className="w-full">
-                                <thead>
-                                  <tr className="border-b border-gray-200 bg-gray-50">
-                                    <th className="w-12 py-2 px-4">
-                                      <input
-                                        type="checkbox"
-                                        className="rounded border-gray-300"
-                                        onChange={() => {}}
-                                      />
-                                    </th>
-                                    <th className="text-left py-2 px-4 text-xs font-medium text-gray-700">Requisition</th>
-                                    <th className="text-left py-2 px-4 text-xs font-medium text-gray-700">Title</th>
-                                    <th className="text-left py-2 px-4 text-xs font-medium text-gray-700">Status</th>
-                                    <th className="text-left py-2 px-4 text-xs font-medium text-gray-700">Recruiter</th>
-                                    <th className="text-left py-2 px-4 text-xs font-medium text-gray-700">Location</th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  {candidate.applications.map((app, index) => (
-                                    <tr key={app.id} className={index < candidate.applications.length - 1 ? 'border-b border-gray-100' : ''}>
-                                      <td className="py-2 px-4">
-                                        <input
-                                          type="checkbox"
-                                          checked={selectedApplications.includes(app.id)}
-                                          onChange={() => toggleApplicationSelection(app.id)}
-                                          className="rounded border-gray-300"
-                                        />
-                                      </td>
-                                      <td className="py-2 px-4 text-sm font-mono text-blue-600">{app.requisitionId}</td>
-                                      <td className="py-2 px-4 text-sm text-gray-900">{app.requisitionTitle}</td>
-                                      <td className="py-2 px-4">
-                                        <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(app.status)}`}>
-                                          {app.status}
-                                        </span>
-                                      </td>
-                                      <td className="py-2 px-4 text-sm text-gray-600">{app.recruiter}</td>
-                                      <td className="py-2 px-4 text-sm text-gray-600">{app.location}</td>
-                                    </tr>
-                                  ))}
-                                </tbody>
-                              </table>
-                            </div>
-                          </div>
-                        </td>
-                      </tr>
-                    )}
-                  </React.Fragment>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      ) : (
-        /* Requisition Grouping View */
-        <div className="space-y-4">
-          {filteredRequisitions.map((requisition) => {
-            const isExpanded = expandedRequisitions.includes(requisition.id);
-            const filteredApps = getFilteredRequisitionApplications(requisition);
-            const selectedStatus = selectedRequisitionStatus[requisition.id];
-
-            return (
-              <div key={requisition.id} className="bg-white rounded-lg shadow-sm border border-gray-200">
-                <div
-                  className="flex items-center justify-between p-4 cursor-pointer hover:bg-gray-50"
-                  onClick={() => toggleRequisitionExpansion(requisition.id)}
-                >
-                  <div className="flex items-center space-x-3">
-                    {isExpanded ? (
-                      <ChevronDown className="w-5 h-5 text-gray-400" />
-                    ) : (
-                      <ChevronRight className="w-5 h-5 text-gray-400" />
-                    )}
-                    <Briefcase className="w-5 h-5 text-blue-500" />
-                    <div>
-                      <h3 className="font-medium text-gray-900">
-                        {requisition.id} - {requisition.title}
-                      </h3>
-                      <div className="text-sm text-gray-500 flex items-center space-x-4">
-                        <span className="flex items-center">
-                          <MapPin className="w-3 h-3 mr-1" />
-                          {requisition.location}
-                        </span>
-                        <span className="flex items-center">
-                          <UserCheck className="w-3 h-3 mr-1" />
-                          {requisition.hiringManager}
-                        </span>
-                      </div>
+          return (
+            <div key={requisition.id} className="bg-white rounded-lg shadow-sm border border-gray-200">
+              {/* Accordion Header */}
+              <div
+                className="flex items-center justify-between p-4 cursor-pointer hover:bg-gray-50 transition-colors"
+                onClick={() => toggleRequisitionExpansion(requisition.id)}
+              >
+                <div className="flex items-center space-x-3">
+                  {isExpanded ? (
+                    <ChevronDown className="w-5 h-5 text-gray-400" />
+                  ) : (
+                    <ChevronRight className="w-5 h-5 text-gray-400" />
+                  )}
+                  <Briefcase className="w-5 h-5 text-blue-500" />
+                  <div>
+                    <h3 className="font-medium text-gray-900">
+                      {requisition.name} ({requisition.id})
+                    </h3>
+                    <div className="text-sm text-gray-500 flex items-center space-x-4 mt-1">
+                      <span className="flex items-center">
+                        <MapPin className="w-3 h-3 mr-1" />
+                        {requisition.location}
+                      </span>
+                      <span className="flex items-center">
+                        <UserCheck className="w-3 h-3 mr-1" />
+                        {requisition.hiringManager}
+                      </span>
                     </div>
-                  </div>
-                  <div className="text-sm text-gray-600">
-                    {requisition.applications.length} applications
                   </div>
                 </div>
+                <div className="text-sm text-gray-600">
+                  {requisition.applications.length} applications
+                </div>
+              </div>
 
-                {isExpanded && (
-                  <div className="border-t border-gray-200 p-4">
-                    {/* Status Cards */}
-                    <div className="mb-4">
-                      <h4 className="text-sm font-medium text-gray-900 mb-3">Application Status</h4>
-                      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
-                        {Object.entries(requisition.statusCounts).map(([status, count]) => (
-                          <button
-                            key={status}
-                            onClick={() => handleRequisitionStatusFilter(requisition.id, status)}
-                            className={`p-3 rounded-lg border text-center transition-colors ${
-                              selectedStatus === status
-                                ? 'border-blue-500 bg-blue-50'
-                                : 'border-gray-200 hover:border-gray-300'
+              {/* Accordion Content */}
+              {isExpanded && (
+                <div className="border-t border-gray-200">
+                  {/* Status Cards */}
+                  <div className="p-4 bg-gray-50">
+                    <h4 className="text-sm font-medium text-gray-900 mb-3">Application Status</h4>
+                    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                      {Object.entries(requisition.statusCounts).map(([status, count]) => (
+                        <button
+                          key={status}
+                          onClick={() => handleRequisitionStatusFilter(requisition.id, status)}
+                          className={`p-3 rounded-lg border text-center transition-colors ${
+                            selectedStatus === status
+                              ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-200'
+                              : 'border-gray-200 hover:border-gray-300 hover:bg-white'
+                          }`}
+                        >
+                          <div className="text-2xl font-bold text-gray-900">{count}</div>
+                          <div className="text-xs text-gray-600 mt-1 leading-tight">{status}</div>
+                        </button>
+                      ))}
+                    </div>
+                    {selectedStatus && (
+                      <div className="mt-3 flex items-center space-x-2">
+                        <span className="text-sm text-gray-600">Filtered by: {selectedStatus}</span>
+                        <button
+                          onClick={() => handleRequisitionStatusFilter(requisition.id, '')}
+                          className="text-sm text-blue-600 hover:text-blue-700"
+                        >
+                          Clear filter
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Applications Table */}
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="border-b border-gray-200 bg-gray-50">
+                          <th className="w-12 py-3 px-4">
+                            <input
+                              type="checkbox"
+                              checked={filteredApps.length > 0 && filteredApps.every(app => selectedApps.includes(app.id))}
+                              onChange={() => toggleAllApplicationsInRequisition(requisition)}
+                              className="rounded border-gray-300"
+                            />
+                          </th>
+                          <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">Application ID</th>
+                          <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">Candidate Name</th>
+                          <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">Job Requisition</th>
+                          <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">Application Status</th>
+                          <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">Hiring Manager</th>
+                          <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">Offer Status</th>
+                          <th className="w-12"></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredApps.map((app, index) => (
+                          <tr 
+                            key={app.id} 
+                            className={`hover:bg-gray-50 transition-colors ${
+                              index < filteredApps.length - 1 ? 'border-b border-gray-100' : ''
                             }`}
                           >
-                            <div className="text-2xl font-bold text-gray-900">{count}</div>
-                            <div className="text-xs text-gray-600 mt-1">{status}</div>
-                          </button>
+                            <td className="py-3 px-4">
+                              <input
+                                type="checkbox"
+                                checked={selectedApps.includes(app.id)}
+                                onChange={() => toggleApplicationSelection(requisition.id, app.id)}
+                                className="rounded border-gray-300"
+                              />
+                            </td>
+                            <td className="py-3 px-4">
+                              <span className="font-mono text-sm text-blue-600">{app.id}</span>
+                            </td>
+                            <td className="py-3 px-4">
+                              <div className="flex items-center space-x-3">
+                                {app.avatar ? (
+                                  <img
+                                    src={app.avatar}
+                                    alt={app.candidateName}
+                                    className="w-8 h-8 rounded-full object-cover"
+                                  />
+                                ) : (
+                                  <div className="w-8 h-8 bg-indigo-500 rounded-full flex items-center justify-center">
+                                    <span className="text-white text-xs font-medium">
+                                      {getInitials(app.candidateName)}
+                                    </span>
+                                  </div>
+                                )}
+                                <div>
+                                  <div className="text-sm font-medium text-gray-900">
+                                    {app.candidateName} ({app.candidateId})
+                                  </div>
+                                  <div className="text-xs text-gray-500">{app.email}</div>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="py-3 px-4">
+                              <div className="text-sm text-gray-900">
+                                {app.requisitionName} ({app.requisitionId})
+                              </div>
+                            </td>
+                            <td className="py-3 px-4">
+                              <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(app.applicationStatus)}`}>
+                                {app.applicationStatus}
+                              </span>
+                            </td>
+                            <td className="py-3 px-4 text-sm text-gray-600">
+                              {app.hiringManager}
+                            </td>
+                            <td className="py-3 px-4">
+                              <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getOfferStatusColor(app.offerStatus)}`}>
+                                {app.offerStatus}
+                              </span>
+                            </td>
+                            <td className="py-3 px-4">
+                              <button className="text-gray-400 hover:text-gray-600 transition-colors">
+                                <Eye className="w-4 h-4" />
+                              </button>
+                            </td>
+                          </tr>
                         ))}
-                      </div>
-                      {selectedStatus && (
-                        <div className="mt-2">
-                          <button
-                            onClick={() => handleRequisitionStatusFilter(requisition.id, '')}
-                            className="text-sm text-blue-600 hover:text-blue-700"
-                          >
-                            Clear filter
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Bulk Actions */}
+                  {selectedApps.length > 0 && (
+                    <div className="p-4 bg-blue-50 border-t border-blue-200">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-blue-800">
+                          {selectedApps.length} application{selectedApps.length !== 1 ? 's' : ''} selected
+                        </span>
+                        <div className="flex items-center space-x-2">
+                          <button className="px-3 py-1 text-sm bg-white border border-blue-300 text-blue-700 rounded hover:bg-blue-50 transition-colors">
+                            Export
+                          </button>
+                          <button className="px-3 py-1 text-sm bg-white border border-blue-300 text-blue-700 rounded hover:bg-blue-50 transition-colors">
+                            Bulk Update
+                          </button>
+                          <button className="px-3 py-1 text-sm bg-white border border-blue-300 text-blue-700 rounded hover:bg-blue-50 transition-colors">
+                            Send Email
                           </button>
                         </div>
-                      )}
+                      </div>
                     </div>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
 
-                    {/* Applications List */}
-                    <div className="bg-gray-50 rounded-lg">
-                      <table className="w-full">
-                        <thead>
-                          <tr className="border-b border-gray-200">
-                            <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">Candidate</th>
-                            <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">Status</th>
-                            <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">Country</th>
-                            <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">Recruiter</th>
-                            <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">Applied</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {filteredApps.map((app, index) => (
-                            <tr key={app.id} className={`hover:bg-white ${index < filteredApps.length - 1 ? 'border-b border-gray-100' : ''}`}>
-                              <td className="py-3 px-4">
-                                <div className="flex items-center space-x-3">
-                                  {app.avatar ? (
-                                    <img
-                                      src={app.avatar}
-                                      alt={app.candidateName}
-                                      className="w-8 h-8 rounded-full object-cover"
-                                    />
-                                  ) : (
-                                    <div className="w-8 h-8 bg-indigo-500 rounded-full flex items-center justify-center">
-                                      <span className="text-white text-xs font-medium">
-                                        {getInitials(app.candidateName)}
-                                      </span>
-                                    </div>
-                                  )}
-                                  <div>
-                                    <div className="text-sm font-medium text-gray-900">{app.candidateName}</div>
-                                    <div className="text-xs text-gray-500">{app.email}</div>
-                                  </div>
-                                </div>
-                              </td>
-                              <td className="py-3 px-4">
-                                <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(app.status)}`}>
-                                  {app.status}
-                                </span>
-                              </td>
-                              <td className="py-3 px-4">
-                                <div className="flex items-center text-sm text-gray-600">
-                                  <Globe className="w-3 h-3 mr-1" />
-                                  {app.country}
-                                </div>
-                              </td>
-                              <td className="py-3 px-4 text-sm text-gray-600">{app.recruiter}</td>
-                              <td className="py-3 px-4 text-sm text-gray-600">
-                                {new Date(app.appliedDate).toLocaleDateString()}
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                )}
-              </div>
-            );
-          })}
+      {/* Empty State */}
+      {requisitionsMap.length === 0 && (
+        <div className="text-center py-12">
+          <Briefcase className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 mb-2">No applications found</h3>
+          <p className="text-gray-500">
+            {searchTerm || customFilter !== 'All Applications' 
+              ? 'Try adjusting your search or filter criteria.'
+              : 'Applications will appear here when candidates apply to job requisitions.'
+            }
+          </p>
         </div>
       )}
-
-      {/* Results Summary */}
-      <div className="mt-6 text-sm text-gray-600 text-center">
-        Showing {viewMode === 'flat' ? filteredCandidates.length : filteredRequisitions.length} {viewMode === 'flat' ? 'candidates' : 'requisitions'} 
-        {activeStatusFilters.length > 0 && ` with status: ${activeStatusFilters.join(', ')}`}
-      </div>
     </div>
   );
 };
