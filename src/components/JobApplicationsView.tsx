@@ -669,14 +669,8 @@ export const JobApplicationsView: React.FC<JobApplicationsViewProps> = ({ onGene
                       ))}
                     </div>
                     {selectedStatus && (
-                      <div className="mt-3 flex items-center space-x-2">
-                        <span className="text-sm text-gray-600">Filtered by: {selectedStatus}</span>
-                        <button
-                          onClick={() => handleRequisitionStatusFilter(requisition.id, '')}
-                          className="text-sm text-blue-600 hover:text-blue-700"
-                        >
-                          Clear filter
-                        </button>
+                      <div className="mt-3">
+                        <span className="text-sm text-gray-600">Showing {filteredApps.length} applications</span>
                       </div>
                     )}
                   </div>
@@ -774,27 +768,6 @@ export const JobApplicationsView: React.FC<JobApplicationsViewProps> = ({ onGene
                     </div>
                   )}
 
-                  {/* Bulk Actions */}
-                  {selectedApps.length > 0 && (
-                    <div className="p-4 bg-blue-50 border-t border-blue-200">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-blue-800">
-                          {selectedApps.length} application{selectedApps.length !== 1 ? 's' : ''} selected
-                        </span>
-                        <div className="flex items-center space-x-2">
-                          <button className="px-3 py-1 text-sm bg-white border border-blue-300 text-blue-700 rounded hover:bg-blue-50 transition-colors">
-                            Export
-                          </button>
-                          <button className="px-3 py-1 text-sm bg-white border border-blue-300 text-blue-700 rounded hover:bg-blue-50 transition-colors">
-                            Bulk Update
-                          </button>
-                          <button className="px-3 py-1 text-sm bg-white border border-blue-300 text-blue-700 rounded hover:bg-blue-50 transition-colors">
-                            Send Email
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  )}
                 </div>
               )}
             </div>
@@ -862,6 +835,25 @@ export const JobApplicationsView: React.FC<JobApplicationsViewProps> = ({ onGene
               : 'Applications will appear here when candidates apply to job requisitions.'
             }
           </p>
+        </div>
+      )}
+
+      {/* Sticky Action Bar */}
+      {Object.values(selectedApplications).some(apps => apps.length > 0) && (
+        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-50">
+          <div className="max-w-7xl mx-auto px-6 py-4">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium text-gray-900">
+                {Object.values(selectedApplications).reduce((total, apps) => total + apps.length, 0)} Applicants Selected
+              </span>
+              <button
+                onClick={onGenerate}
+                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+              >
+                Generate
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
