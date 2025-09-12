@@ -677,6 +677,23 @@ export const JobApplicationsView: React.FC<JobApplicationsViewProps> = ({ onGene
 
                   {/* Applications Table */}
                   <div className="overflow-x-auto">
+                    {/* Sticky Action Bar - appears when applications are selected */}
+                    {selectedApps.length > 0 && (
+                      <div className="sticky top-0 z-10 bg-blue-50 border-b border-blue-200 px-4 py-3">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium text-blue-900">
+                            {selectedApps.length} Applicant{selectedApps.length !== 1 ? 's' : ''} Selected
+                          </span>
+                          <button
+                            onClick={onGenerate}
+                            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+                          >
+                            Generate
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                    
                     <table className="w-full">
                       <thead>
                         <tr className="border-b border-gray-200 bg-gray-50">
