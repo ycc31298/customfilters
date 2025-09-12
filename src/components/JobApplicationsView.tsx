@@ -46,6 +46,7 @@ export const JobApplicationsView: React.FC<JobApplicationsViewProps> = ({ onGene
   const [loadedApplications, setLoadedApplications] = useState<Record<string, number>>({});
   const [applicationsPerLoad] = useState(20);
   const [isLoadingApplications, setIsLoadingApplications] = useState<Record<string, boolean>>({});
+  const [showAllStatusChips, setShowAllStatusChips] = useState(false);
 
   // Refs for infinite scroll
   const applicationContainerRefs = useRef<Record<string, HTMLDivElement | null>>({});
@@ -194,13 +195,13 @@ export const JobApplicationsView: React.FC<JobApplicationsViewProps> = ({ onGene
   // Statuses eligible for document generation
   const eligibleStatuses = [
     'Offer Approval',
-    'Offer Approved',
+    'Offer Approved', 
     'Offer Extended',
     'Offer Accepted',
+    'Offer Declined',
     'Ready to Hire',
     'Hired',
-    'Final Interview',
-    'Onboarding'
+    'Final Interview'
   ];
 
   // Apply custom filters
@@ -258,13 +259,11 @@ export const JobApplicationsView: React.FC<JobApplicationsViewProps> = ({ onGene
   const getFlatViewApplications = () => {
     let filtered = getFilteredApplications();
     
-    // Filter by eligible statuses for accordion view, but show all for flat view
-    if (viewMode === 'accordion') {
-      filtered = filtered.filter(app => eligibleStatuses.includes(app.applicationStatus));
-    }
+    // Filter by eligible statuses for both views
+    filtered = filtered.filter(app => eligibleStatuses.includes(app.applicationStatus));
 
     // Apply status filters for flat view
-    if (viewMode === 'flat' && selectedStatusFilters.length > 0) {
+    if (selectedStatusFilters.length > 0) {
       filtered = filtered.filter(app => selectedStatusFilters.includes(app.applicationStatus));
     }
 
@@ -276,9 +275,12 @@ export const JobApplicationsView: React.FC<JobApplicationsViewProps> = ({ onGene
     const filtered = getFilteredApplications();
     const counts: Record<string, number> = {};
     
-    filtered.forEach(app => {
-      counts[app.applicationStatus] = (counts[app.applicationStatus] || 0) + 1;
-    });
+    // Only count applications with eligible statuses
+    filtered
+      .filter(app => eligibleStatuses.includes(app.applicationStatus))
+      .forEach(app => {
+        counts[app.applicationStatus] = (counts[app.applicationStatus] || 0) + 1;
+      });
     
     return counts;
   };
@@ -535,6 +537,7 @@ export const JobApplicationsView: React.FC<JobApplicationsViewProps> = ({ onGene
     setFlatSelectedApplications([]);
     setSelectedStatusFilters([]);
     setExpandedRequisitions([]);
+    setShowAllStatusChips(false);
   };
 
   return (
@@ -601,8 +604,68 @@ export const JobApplicationsView: React.FC<JobApplicationsViewProps> = ({ onGene
         <>
           {/* Status Filter Chips */}
           <div className="mb-6">
-            <div className="flex flex-wrap gap-2">
-              {Object.entries(getStatusCounts()).map(([status, count]) => (
+            {(() => {
+              const statusCounts = getStatusCounts();
+              const statusEntries = Object.entries(statusCounts);
+              const maxVisibleChips = 6;
+              const hasMoreChips = statusEntries.length > maxVisibleChips;
+              const visibleChips = showAllStatusChips ? statusEntries : statusEntries.slice(0, maxVisibleChips);
+              const hiddenCount = statusEntries.length - maxVisibleChips;
+
+              return (
+                <div className="space-y-2">
+                  <div className="flex flex-wrap gap-2">
+                    {visibleChips.map(([status, count]) => (
+                      <button
+                        key={status}
+                        onClick={() => toggleStatusFilter(status)}
+                        className={`inline-flex items-center px-3 py-2 rounded-full text-sm font-medium transition-colors ${
+                          selectedStatusFilters.includes(status)
+                            ? 'bg-blue-100 text-blue-800 ring-2 ring-blue-200'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
+                      >
+                        {status}
+                        <span className="ml-2 px-2 py-0.5 bg-white/50 rounded-full text-xs">
+                          {count}
+                        </span>
+                      </button>
+                    ))}
+                    
+                    {hasMoreChips && !showAllStatusChips && (
+                      <button
+                        onClick={() => setShowAllStatusChips(true)}
+                        className="inline-flex items-center px-3 py-2 rounded-full text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
+                      >
+                        +{hiddenCount} More
+                      </button>
+                    )}
+                  </div>
+                  
+                  {showAllStatusChips && hasMoreChips && (
+                    <div className="flex justify-start">
+                      <button
+                        onClick={() => setShowAllStatusChips(false)}
+                        className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+                      >
+                        Show Less
+                      </button>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+          </div>
+
+          {/* Results Summary */}
+          <div className="mb-4 text-sm text-gray-600">
+            Showing {paginatedFlatApplications.length} of {flatViewApplications.length} applications
+            {selectedStatusFilters.length > 0 && (
+              <span className="ml-2">
+                (filtered by {selectedStatusFilters.length} status{selectedStatusFilters.length !== 1 ? 'es' : ''})
+              </span>
+            )}
+          </div>
                 <button
                   key={status}
                   onClick={() => toggleStatusFilter(status)}
