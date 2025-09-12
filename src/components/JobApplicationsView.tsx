@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Search, Filter, ChevronDown, ChevronRight, Briefcase, MapPin, UserCheck, Plus, Eye } from 'lucide-react';
+import { Search, Filter, ChevronDown, ChevronRight, Briefcase, MapPin, UserCheck, Plus, Eye, ChevronLeft, ChevronRight as ChevronRightIcon } from 'lucide-react';
 
 interface Application {
   id: string;
@@ -37,6 +37,10 @@ export const JobApplicationsView: React.FC<JobApplicationsViewProps> = ({ onGene
   const [expandedRequisitions, setExpandedRequisitions] = useState<string[]>([]);
   const [selectedRequisitionStatus, setSelectedRequisitionStatus] = useState<Record<string, string>>({});
   const [selectedApplications, setSelectedApplications] = useState<Record<string, string[]>>({});
+  const [currentPage, setCurrentPage] = useState(1);
+  const [requisitionsPerPage] = useState(10);
+  const [visibleApplications, setVisibleApplications] = useState<Record<string, number>>({});
+  const [applicationsPerLoad] = useState(20);
 
   // Sample data
   const applications: Application[] = [
@@ -251,6 +255,92 @@ export const JobApplicationsView: React.FC<JobApplicationsViewProps> = ({ onGene
     }))
   ];
 
+  // Generate more applications to demonstrate infinite scroll
+  const generateMoreApplications = (baseApplications: Application[]): Application[] => {
+    const additionalApps: Application[] = [];
+    
+    // Add more applications for each requisition to demonstrate infinite scroll
+    for (let reqIndex = 1; reqIndex <= 8; reqIndex++) {
+      const reqId = `REQ-2024-${String(reqIndex).padStart(3, '0')}`;
+      const reqName = [
+        'Senior Software Engineer',
+        'Product Manager', 
+        'UX Designer',
+        'Data Scientist',
+        'Marketing Manager',
+        'Sales Representative',
+        'HR Specialist',
+        'DevOps Engineer'
+      ][(reqIndex - 1) % 8];
+      
+      // Add 30-50 applications per requisition
+      const numApps = 30 + Math.floor(Math.random() * 21);
+      
+      for (let i = 0; i < numApps; i++) {
+        const appId = `APP-${reqId}-${String(i + 1).padStart(3, '0')}`;
+        additionalApps.push({
+          id: appId,
+          candidateId: `CAND-${reqId}-${String(i + 1).padStart(3, '0')}`,
+          candidateName: `Candidate ${reqIndex}-${i + 1}`,
+          email: `candidate.${reqIndex}.${i + 1}@email.com`,
+          phone: `+1 (555) ${String(Math.floor(Math.random() * 900) + 100)}-${String(Math.floor(Math.random() * 9000) + 1000)}`,
+          requisitionId: reqId,
+          requisitionName: reqName,
+          applicationStatus: [
+            'New',
+            'Phone Screen',
+            'Technical Review',
+            'Interview Scheduled',
+            'Final Interview',
+            'Offer Approval',
+            'Offer Approved',
+            'Offer Extended',
+            'Offer Accepted',
+            'Offer Declined',
+            'Ready to Hire',
+            'Hired',
+            'Rejected',
+            'Withdrawn',
+            'Portfolio Review'
+          ][i % 15],
+          hiringManager: [
+            'David Chen',
+            'Jennifer Martinez',
+            'Sarah Davis',
+            'Michael Brown',
+            'Lisa Wang',
+            'Robert Johnson',
+            'Emily Rodriguez',
+            'James Wilson'
+          ][(reqIndex - 1) % 8],
+          recruiter: [
+            'Sarah Martinez',
+            'Lisa Chen',
+            'Mike Johnson',
+            'Tom Wilson',
+            'Amy Rodriguez'
+          ][i % 5],
+          appliedDate: `2024-01-${String(Math.floor(Math.random() * 28) + 1).padStart(2, '0')}`,
+          location: [
+            'San Francisco, CA',
+            'New York, NY',
+            'Austin, TX',
+            'Seattle, WA',
+            'Boston, MA',
+            'Chicago, IL',
+            'Los Angeles, CA',
+            'Denver, CO'
+          ][(reqIndex - 1) % 8],
+          country: 'United States',
+          avatar: i % 4 === 0 ? `https://images.pexels.com/photos/${1000000 + (reqIndex * 100) + i}/pexels-photo-${1000000 + (reqIndex * 100) + i}.jpeg?auto=compress&cs=tinysrgb&w=64&h=64&dpr=2` : undefined
+        });
+      }
+    }
+    
+    return [...baseApplications, ...additionalApps];
+  };
+
+  const allApplications = generateMoreApplications(applications);
   // Custom filter options
   const customFilterOptions = [
     'All Applications',
@@ -275,27 +365,27 @@ export const JobApplicationsView: React.FC<JobApplicationsViewProps> = ({ onGene
 
   // Apply custom filters
   const getFilteredApplications = () => {
-    let filtered = applications;
+    let filtered = allApplications;
 
     // Apply custom filter logic (simplified for demo)
     switch (customFilter) {
       case 'My Candidates':
-        filtered = applications.filter(app => 
+        filtered = allApplications.filter(app => 
           ['David Chen', 'Jennifer Martinez', 'Sarah Davis'].includes(app.hiringManager)
         );
         break;
       case 'Open Applications':
-        filtered = applications.filter(app => 
+        filtered = allApplications.filter(app => 
           !['Rejected', 'Withdrawn', 'Offer Extended'].includes(app.applicationStatus)
         );
         break;
       case 'High Priority Reqs':
-        filtered = applications.filter(app => 
+        filtered = allApplications.filter(app => 
           ['REQ-2024-001', 'REQ-2024-002'].includes(app.requisitionId)
         );
         break;
       case 'Recent Applications':
-        filtered = applications.filter(app => {
+        filtered = allApplications.filter(app => {
           const appDate = new Date(app.appliedDate);
           const weekAgo = new Date();
           weekAgo.setDate(weekAgo.getDate() - 7);
@@ -303,12 +393,12 @@ export const JobApplicationsView: React.FC<JobApplicationsViewProps> = ({ onGene
         });
         break;
       case 'Pending Offers':
-        filtered = applications.filter(app => 
+        filtered = allApplications.filter(app => 
           ['Offer Approval', 'Offer Approved', 'Offer Extended', 'Offer Accepted'].includes(app.applicationStatus)
         );
         break;
       default:
-        filtered = applications;
+        filtered = allApplications;
     }
 
     // Apply search filter
@@ -352,6 +442,23 @@ export const JobApplicationsView: React.FC<JobApplicationsViewProps> = ({ onGene
     
     return Array.from(map.values());
   }, [searchTerm, customFilter]);
+
+  // Pagination for requisitions
+  const totalPages = Math.ceil(requisitionsMap.length / requisitionsPerPage);
+  const startIndex = (currentPage - 1) * requisitionsPerPage;
+  const paginatedRequisitions = requisitionsMap.slice(startIndex, startIndex + requisitionsPerPage);
+
+  // Initialize visible applications count for each requisition
+  const getVisibleApplicationsCount = (requisitionId: string) => {
+    return visibleApplications[requisitionId] || applicationsPerLoad;
+  };
+
+  const loadMoreApplications = (requisitionId: string) => {
+    setVisibleApplications(prev => ({
+      ...prev,
+      [requisitionId]: (prev[requisitionId] || applicationsPerLoad) + applicationsPerLoad
+    }));
+  };
 
   const getStatusColor = (status: string) => {
     const colors: Record<string, string> = {
@@ -426,6 +533,29 @@ export const JobApplicationsView: React.FC<JobApplicationsViewProps> = ({ onGene
     }));
   };
 
+  const goToPage = (page: number) => {
+    setCurrentPage(page);
+    // Reset visible applications when changing pages
+    setVisibleApplications({});
+  };
+
+  const getPaginationRange = () => {
+    const range = [];
+    const maxVisible = 5;
+    let start = Math.max(1, currentPage - Math.floor(maxVisible / 2));
+    let end = Math.min(totalPages, start + maxVisible - 1);
+    
+    if (end - start + 1 < maxVisible) {
+      start = Math.max(1, end - maxVisible + 1);
+    }
+    
+    for (let i = start; i <= end; i++) {
+      range.push(i);
+    }
+    
+    return range;
+  };
+
   return (
     <div className="p-6">
       <div className="flex items-center justify-between mb-6">
@@ -467,14 +597,17 @@ export const JobApplicationsView: React.FC<JobApplicationsViewProps> = ({ onGene
 
       {/* Results Summary */}
       <div className="mb-4 text-sm text-gray-600">
-        Showing {requisitionsMap.length} requisitions with {requisitionsMap.reduce((sum, req) => sum + req.applications.length, 0)} applications
+        Showing {paginatedRequisitions.length} of {requisitionsMap.length} requisitions with {requisitionsMap.reduce((sum, req) => sum + req.applications.length, 0)} total applications
       </div>
 
       {/* Requisition Accordions */}
       <div className="space-y-4">
-        {requisitionsMap.map((requisition) => {
+        {paginatedRequisitions.map((requisition) => {
           const isExpanded = expandedRequisitions.includes(requisition.id);
           const filteredApps = getFilteredRequisitionApplications(requisition);
+          const visibleCount = getVisibleApplicationsCount(requisition.id);
+          const visibleApps = filteredApps.slice(0, visibleCount);
+          const hasMoreApps = visibleCount < filteredApps.length;
           const selectedStatus = selectedRequisitionStatus[requisition.id];
           const selectedApps = selectedApplications[requisition.id] || [];
 
@@ -556,7 +689,7 @@ export const JobApplicationsView: React.FC<JobApplicationsViewProps> = ({ onGene
                           <th className="w-12 py-3 px-4">
                             <input
                               type="checkbox"
-                              checked={filteredApps.length > 0 && filteredApps.every(app => selectedApps.includes(app.id))}
+                              checked={visibleApps.length > 0 && visibleApps.every(app => selectedApps.includes(app.id))}
                               onChange={() => toggleAllApplicationsInRequisition(requisition)}
                               className="rounded border-gray-300"
                             />
@@ -569,11 +702,11 @@ export const JobApplicationsView: React.FC<JobApplicationsViewProps> = ({ onGene
                         </tr>
                       </thead>
                       <tbody>
-                        {filteredApps.map((app, index) => (
+                        {visibleApps.map((app, index) => (
                           <tr 
                             key={app.id} 
                             className={`hover:bg-gray-50 transition-colors ${
-                              index < filteredApps.length - 1 ? 'border-b border-gray-100' : ''
+                              index < visibleApps.length - 1 ? 'border-b border-gray-100' : ''
                             }`}
                           >
                             <td className="py-3 px-4">
@@ -629,6 +762,18 @@ export const JobApplicationsView: React.FC<JobApplicationsViewProps> = ({ onGene
                     </table>
                   </div>
 
+                  {/* Load More Button */}
+                  {hasMoreApps && (
+                    <div className="p-4 text-center border-t border-gray-200">
+                      <button
+                        onClick={() => loadMoreApplications(requisition.id)}
+                        className="px-4 py-2 text-sm text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
+                      >
+                        Load More Applications ({filteredApps.length - visibleCount} remaining)
+                      </button>
+                    </div>
+                  )}
+
                   {/* Bulk Actions */}
                   {selectedApps.length > 0 && (
                     <div className="p-4 bg-blue-50 border-t border-blue-200">
@@ -657,8 +802,57 @@ export const JobApplicationsView: React.FC<JobApplicationsViewProps> = ({ onGene
         })}
       </div>
 
+      {/* Pagination Controls */}
+      {totalPages > 1 && (
+        <div className="mt-6 flex items-center justify-between">
+          <div className="text-sm text-gray-600">
+            Page {currentPage} of {totalPages} ({requisitionsMap.length} total requisitions)
+          </div>
+          
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={() => goToPage(currentPage - 1)}
+              disabled={currentPage === 1}
+              className={`p-2 rounded-lg ${
+                currentPage === 1
+                  ? 'text-gray-400 cursor-not-allowed'
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+              }`}
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            
+            {getPaginationRange().map(page => (
+              <button
+                key={page}
+                onClick={() => goToPage(page)}
+                className={`px-3 py-2 text-sm rounded-lg ${
+                  currentPage === page
+                    ? 'bg-blue-600 text-white'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                }`}
+              >
+                {page}
+              </button>
+            ))}
+            
+            <button
+              onClick={() => goToPage(currentPage + 1)}
+              disabled={currentPage === totalPages}
+              className={`p-2 rounded-lg ${
+                currentPage === totalPages
+                  ? 'text-gray-400 cursor-not-allowed'
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+              }`}
+            >
+              <ChevronRightIcon className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Empty State */}
-      {requisitionsMap.length === 0 && (
+      {paginatedRequisitions.length === 0 && (
         <div className="text-center py-12">
           <Briefcase className="w-12 h-12 text-gray-400 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-gray-900 mb-2">No applications found</h3>
