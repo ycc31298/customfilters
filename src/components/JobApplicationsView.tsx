@@ -256,6 +256,15 @@ export const JobApplicationsView: React.FC<JobApplicationsViewProps> = ({ onGene
     'Pending Offers'
   ];
 
+  // Statuses eligible for document generation
+  const eligibleStatuses = [
+    'Offer Extended',
+    'Background Check',
+    'Final Interview',
+    'Hired',
+    'Onboarding'
+  ];
+
   // Apply custom filters
   const getFilteredApplications = () => {
     let filtered = applications;
@@ -313,6 +322,11 @@ export const JobApplicationsView: React.FC<JobApplicationsViewProps> = ({ onGene
     const map = new Map<string, Requisition>();
     
     filtered.forEach(app => {
+      // Only include applications with eligible statuses
+      if (!eligibleStatuses.includes(app.applicationStatus)) {
+        return;
+      }
+      
       if (!map.has(app.requisitionId)) {
         map.set(app.requisitionId, {
           id: app.requisitionId,
@@ -452,11 +466,6 @@ export const JobApplicationsView: React.FC<JobApplicationsViewProps> = ({ onGene
       {/* Results Summary */}
       <div className="mb-4 text-sm text-gray-600">
         Showing {requisitionsMap.length} requisitions with {requisitionsMap.reduce((sum, req) => sum + req.applications.length, 0)} applications
-        {customFilter !== 'All Applications' && (
-          <span className="ml-2 px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
-            Filter: {customFilter}
-          </span>
-        )}
       </div>
 
       {/* Requisition Accordions */}
@@ -552,9 +561,7 @@ export const JobApplicationsView: React.FC<JobApplicationsViewProps> = ({ onGene
                           </th>
                           <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">Application ID</th>
                           <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">Candidate Name</th>
-                          <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">Job Requisition</th>
                           <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">Application Status</th>
-                          <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">Hiring Manager</th>
                           <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">Offer Status</th>
                           <th className="w-12"></th>
                         </tr>
@@ -602,17 +609,9 @@ export const JobApplicationsView: React.FC<JobApplicationsViewProps> = ({ onGene
                               </div>
                             </td>
                             <td className="py-3 px-4">
-                              <div className="text-sm text-gray-900">
-                                {app.requisitionName} ({app.requisitionId})
-                              </div>
-                            </td>
-                            <td className="py-3 px-4">
                               <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(app.applicationStatus)}`}>
                                 {app.applicationStatus}
                               </span>
-                            </td>
-                            <td className="py-3 px-4 text-sm text-gray-600">
-                              {app.hiringManager}
                             </td>
                             <td className="py-3 px-4">
                               <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getOfferStatusColor(app.offerStatus)}`}>
