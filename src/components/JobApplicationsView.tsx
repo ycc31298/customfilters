@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useCallback, useEffect } from 'react';
 import { Search, Filter, ChevronDown, ChevronRight, Briefcase, MapPin, UserCheck, Plus, Eye, ChevronLeft, ChevronRight as ChevronRightIcon } from 'lucide-react';
 
 interface Application {
@@ -39,308 +39,144 @@ export const JobApplicationsView: React.FC<JobApplicationsViewProps> = ({ onGene
   const [selectedApplications, setSelectedApplications] = useState<Record<string, string[]>>({});
   const [currentPage, setCurrentPage] = useState(1);
   const [requisitionsPerPage] = useState(10);
-  const [visibleApplications, setVisibleApplications] = useState<Record<string, number>>({});
+  const [loadedApplications, setLoadedApplications] = useState<Record<string, number>>({});
   const [applicationsPerLoad] = useState(20);
+  const [isLoadingApplications, setIsLoadingApplications] = useState<Record<string, boolean>>({});
 
-  // Sample data
-  const applications: Application[] = [
-    // REQ-2024-001 - Software Engineer
-    {
-      id: 'APP-001',
-      candidateId: 'CAND-001',
-      candidateName: 'Sarah Johnson',
-      email: 'sarah.johnson@email.com',
-      phone: '+1 (555) 123-4567',
-      requisitionId: 'REQ-2024-001',
-      requisitionName: 'Senior Software Engineer',
-      applicationStatus: 'Interview Scheduled',
-      hiringManager: 'David Chen',
-      recruiter: 'Sarah Martinez',
-      appliedDate: '2024-01-15',
-      location: 'San Francisco, CA',
-      country: 'United States',
-      avatar: 'https://images.pexels.com/photos/774909/pexels-photo-774909.jpeg?auto=compress&cs=tinysrgb&w=64&h=64&dpr=2'
-    },
-    {
-      id: 'APP-002',
-      candidateId: 'CAND-002',
-      candidateName: 'Michael Rodriguez',
-      email: 'michael.rodriguez@email.com',
-      phone: '+1 (555) 234-5678',
-      requisitionId: 'REQ-2024-001',
-      requisitionName: 'Senior Software Engineer',
-      applicationStatus: 'Technical Review',
-      hiringManager: 'David Chen',
-      recruiter: 'Sarah Martinez',
-      appliedDate: '2024-01-12',
-      location: 'San Francisco, CA',
-      country: 'United States',
-      avatar: 'https://images.pexels.com/photos/1222271/pexels-photo-1222271.jpeg?auto=compress&cs=tinysrgb&w=64&h=64&dpr=2'
-    },
-    {
-      id: 'APP-003',
-      candidateId: 'CAND-003',
-      candidateName: 'Emily Chen',
-      email: 'emily.chen@email.com',
-      phone: '+1 (555) 345-6789',
-      requisitionId: 'REQ-2024-001',
-      requisitionName: 'Senior Software Engineer',
-      applicationStatus: 'New',
-      hiringManager: 'David Chen',
-      recruiter: 'Mike Johnson',
-      appliedDate: '2024-01-18',
-      location: 'San Francisco, CA',
-      country: 'United States'
-    },
-    {
-      id: 'APP-004',
-      candidateId: 'CAND-004',
-      candidateName: 'James Wilson',
-      email: 'james.wilson@email.com',
-      phone: '+1 (555) 456-7890',
-      requisitionId: 'REQ-2024-001',
-      requisitionName: 'Senior Software Engineer',
-      applicationStatus: 'Hired',
-      hiringManager: 'David Chen',
-      recruiter: 'Sarah Martinez',
-      appliedDate: '2024-01-08',
-      location: 'San Francisco, CA',
-      country: 'United States',
-      avatar: 'https://images.pexels.com/photos/1239291/pexels-photo-1239291.jpeg?auto=compress&cs=tinysrgb&w=64&h=64&dpr=2'
-    },
-    // REQ-2024-002 - Product Manager
-    {
-      id: 'APP-005',
-      candidateId: 'CAND-005',
-      candidateName: 'Lisa Thompson',
-      email: 'lisa.thompson@email.com',
-      phone: '+1 (555) 567-8901',
-      requisitionId: 'REQ-2024-002',
-      requisitionName: 'Product Manager',
-      applicationStatus: 'Phone Screen',
-      hiringManager: 'Jennifer Martinez',
-      recruiter: 'Lisa Chen',
-      appliedDate: '2024-01-20',
-      location: 'New York, NY',
-      country: 'United States',
-      avatar: 'https://images.pexels.com/photos/1181519/pexels-photo-1181519.jpeg?auto=compress&cs=tinysrgb&w=64&h=64&dpr=2'
-    },
-    {
-      id: 'APP-006',
-      candidateId: 'CAND-006',
-      candidateName: 'Robert Kim',
-      email: 'robert.kim@email.com',
-      phone: '+1 (555) 678-9012',
-      requisitionId: 'REQ-2024-002',
-      requisitionName: 'Product Manager',
-      applicationStatus: 'Offer Approved',
-      hiringManager: 'Jennifer Martinez',
-      recruiter: 'Lisa Chen',
-      appliedDate: '2024-01-10',
-      location: 'New York, NY',
-      country: 'United States'
-    },
-    {
-      id: 'APP-007',
-      candidateId: 'CAND-007',
-      candidateName: 'Maria Garcia',
-      email: 'maria.garcia@email.com',
-      phone: '+1 (555) 789-0123',
-      requisitionId: 'REQ-2024-002',
-      requisitionName: 'Product Manager',
-      applicationStatus: 'Rejected',
-      hiringManager: 'Jennifer Martinez',
-      recruiter: 'Mike Johnson',
-      appliedDate: '2024-01-05',
-      location: 'New York, NY',
-      country: 'United States'
-    },
-    // REQ-2024-003 - UX Designer
-    {
-      id: 'APP-008',
-      candidateId: 'CAND-008',
-      candidateName: 'Alex Turner',
-      email: 'alex.turner@email.com',
-      phone: '+1 (555) 890-1234',
-      requisitionId: 'REQ-2024-003',
-      requisitionName: 'UX Designer',
-      applicationStatus: 'Portfolio Review',
-      hiringManager: 'Sarah Davis',
-      recruiter: 'Tom Wilson',
-      appliedDate: '2024-01-22',
-      location: 'Austin, TX',
-      country: 'United States'
-    },
-    {
-      id: 'APP-009',
-      candidateId: 'CAND-009',
-      candidateName: 'Nina Patel',
-      email: 'nina.patel@email.com',
-      phone: '+1 (555) 901-2345',
-      requisitionId: 'REQ-2024-003',
-      requisitionName: 'UX Designer',
-      applicationStatus: 'Ready to Hire',
-      hiringManager: 'Sarah Davis',
-      recruiter: 'Tom Wilson',
-      appliedDate: '2024-01-14',
-      location: 'Austin, TX',
-      country: 'United States',
-      avatar: 'https://images.pexels.com/photos/1239291/pexels-photo-1239291.jpeg?auto=compress&cs=tinysrgb&w=64&h=64&dpr=2'
-    },
-    // Add more sample data
-    ...Array.from({ length: 50 }, (_, i) => ({
-      id: `APP-${String(i + 10).padStart(3, '0')}`,
-      candidateId: `CAND-${String(i + 10).padStart(3, '0')}`,
-      candidateName: `Candidate ${i + 10}`,
-      email: `candidate${i + 10}@email.com`,
-      phone: `+1 (555) ${String(Math.floor(Math.random() * 900) + 100)}-${String(Math.floor(Math.random() * 9000) + 1000)}`,
-      requisitionId: `REQ-2024-${String((i % 8) + 1).padStart(3, '0')}`,
-      requisitionName: [
-        'Senior Software Engineer',
-        'Product Manager', 
-        'UX Designer',
-        'Data Scientist',
-        'Marketing Manager',
-        'Sales Representative',
-        'HR Specialist',
-        'DevOps Engineer'
-      ][i % 8],
-      applicationStatus: [
-        'New',
-        'Phone Screen',
-        'Technical Review',
-        'Interview Scheduled',
-        'Final Interview',
-        'Offer Approval',
-        'Offer Approved',
-        'Offer Extended',
-        'Offer Accepted',
-        'Offer Declined',
-        'Ready to Hire',
-        'Hired',
-        'Rejected',
-        'Withdrawn',
-        'Portfolio Review'
-      ][i % 13],
-      hiringManager: [
-        'David Chen',
-        'Jennifer Martinez',
-        'Sarah Davis',
-        'Michael Brown',
-        'Lisa Wang',
-        'Robert Johnson',
-        'Emily Rodriguez',
-        'James Wilson'
-      ][i % 8],
-      recruiter: [
-        'Sarah Martinez',
-        'Lisa Chen',
-        'Mike Johnson',
-        'Tom Wilson',
-        'Amy Rodriguez'
-      ][i % 5],
-      appliedDate: `2024-01-${String(Math.floor(Math.random() * 28) + 1).padStart(2, '0')}`,
-      location: [
-        'San Francisco, CA',
-        'New York, NY',
-        'Austin, TX',
-        'Seattle, WA',
-        'Boston, MA',
-        'Chicago, IL',
-        'Los Angeles, CA',
-        'Denver, CO'
-      ][i % 8],
-      country: 'United States',
-      avatar: i % 4 === 0 ? `https://images.pexels.com/photos/${1000000 + i}/pexels-photo-${1000000 + i}.jpeg?auto=compress&cs=tinysrgb&w=64&h=64&dpr=2` : undefined
-    }))
-  ];
+  // Refs for infinite scroll
+  const applicationContainerRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
-  // Generate more applications to demonstrate infinite scroll
-  const generateMoreApplications = (baseApplications: Application[]): Application[] => {
-    const additionalApps: Application[] = [];
-    
-    // Add more applications for each requisition to demonstrate infinite scroll
-    for (let reqIndex = 1; reqIndex <= 8; reqIndex++) {
+  // Generate comprehensive sample data
+  const generateApplications = (): Application[] => {
+    const applications: Application[] = [];
+    const jobTitles = [
+      'Senior Software Engineer',
+      'Product Manager', 
+      'UX Designer',
+      'Data Scientist',
+      'Marketing Manager',
+      'Sales Representative',
+      'HR Specialist',
+      'DevOps Engineer',
+      'Frontend Developer',
+      'Backend Developer',
+      'Full Stack Developer',
+      'Mobile Developer',
+      'QA Engineer',
+      'Business Analyst',
+      'Project Manager',
+      'Technical Writer',
+      'Customer Success Manager',
+      'Account Executive',
+      'Financial Analyst',
+      'Operations Manager'
+    ];
+
+    const locations = [
+      'San Francisco, CA',
+      'New York, NY',
+      'Austin, TX',
+      'Seattle, WA',
+      'Boston, MA',
+      'Chicago, IL',
+      'Los Angeles, CA',
+      'Denver, CO',
+      'Atlanta, GA',
+      'Miami, FL',
+      'Portland, OR',
+      'Nashville, TN',
+      'Phoenix, AZ',
+      'Dallas, TX',
+      'Philadelphia, PA'
+    ];
+
+    const hiringManagers = [
+      'David Chen',
+      'Jennifer Martinez',
+      'Sarah Davis',
+      'Michael Brown',
+      'Lisa Wang',
+      'Robert Johnson',
+      'Emily Rodriguez',
+      'James Wilson',
+      'Amanda Thompson',
+      'Kevin Lee',
+      'Rachel Green',
+      'Mark Anderson',
+      'Jessica Taylor',
+      'Daniel Kim',
+      'Laura Miller'
+    ];
+
+    const recruiters = [
+      'Sarah Martinez',
+      'Lisa Chen',
+      'Mike Johnson',
+      'Tom Wilson',
+      'Amy Rodriguez',
+      'Chris Parker',
+      'Nicole Davis',
+      'Ryan Thompson',
+      'Maria Garcia',
+      'Alex Turner'
+    ];
+
+    const statuses = [
+      'New',
+      'Phone Screen',
+      'Technical Review',
+      'Interview Scheduled',
+      'Final Interview',
+      'Offer Approval',
+      'Offer Approved',
+      'Offer Extended',
+      'Offer Accepted',
+      'Offer Declined',
+      'Ready to Hire',
+      'Hired',
+      'Rejected',
+      'Withdrawn',
+      'Portfolio Review'
+    ];
+
+    // Generate 60 requisitions with 100-150 applications each
+    for (let reqIndex = 1; reqIndex <= 60; reqIndex++) {
       const reqId = `REQ-2024-${String(reqIndex).padStart(3, '0')}`;
-      const reqName = [
-        'Senior Software Engineer',
-        'Product Manager', 
-        'UX Designer',
-        'Data Scientist',
-        'Marketing Manager',
-        'Sales Representative',
-        'HR Specialist',
-        'DevOps Engineer'
-      ][(reqIndex - 1) % 8];
+      const jobTitle = jobTitles[(reqIndex - 1) % jobTitles.length];
+      const location = locations[(reqIndex - 1) % locations.length];
+      const hiringManager = hiringManagers[(reqIndex - 1) % hiringManagers.length];
       
-      // Add 30-50 applications per requisition
-      const numApps = 30 + Math.floor(Math.random() * 21);
+      // Generate 100-150 applications per requisition
+      const numApps = 100 + Math.floor(Math.random() * 51);
       
-      for (let i = 0; i < numApps; i++) {
-        const appId = `APP-${reqId}-${String(i + 1).padStart(3, '0')}`;
-        additionalApps.push({
+      for (let appIndex = 1; appIndex <= numApps; appIndex++) {
+        const appId = `APP-${reqId}-${String(appIndex).padStart(3, '0')}`;
+        const candidateId = `CAND-${reqId}-${String(appIndex).padStart(3, '0')}`;
+        
+        applications.push({
           id: appId,
-          candidateId: `CAND-${reqId}-${String(i + 1).padStart(3, '0')}`,
-          candidateName: `Candidate ${reqIndex}-${i + 1}`,
-          email: `candidate.${reqIndex}.${i + 1}@email.com`,
+          candidateId: candidateId,
+          candidateName: `Candidate ${reqIndex}-${appIndex}`,
+          email: `candidate.${reqIndex}.${appIndex}@email.com`,
           phone: `+1 (555) ${String(Math.floor(Math.random() * 900) + 100)}-${String(Math.floor(Math.random() * 9000) + 1000)}`,
           requisitionId: reqId,
-          requisitionName: reqName,
-          applicationStatus: [
-            'New',
-            'Phone Screen',
-            'Technical Review',
-            'Interview Scheduled',
-            'Final Interview',
-            'Offer Approval',
-            'Offer Approved',
-            'Offer Extended',
-            'Offer Accepted',
-            'Offer Declined',
-            'Ready to Hire',
-            'Hired',
-            'Rejected',
-            'Withdrawn',
-            'Portfolio Review'
-          ][i % 15],
-          hiringManager: [
-            'David Chen',
-            'Jennifer Martinez',
-            'Sarah Davis',
-            'Michael Brown',
-            'Lisa Wang',
-            'Robert Johnson',
-            'Emily Rodriguez',
-            'James Wilson'
-          ][(reqIndex - 1) % 8],
-          recruiter: [
-            'Sarah Martinez',
-            'Lisa Chen',
-            'Mike Johnson',
-            'Tom Wilson',
-            'Amy Rodriguez'
-          ][i % 5],
-          appliedDate: `2024-01-${String(Math.floor(Math.random() * 28) + 1).padStart(2, '0')}`,
-          location: [
-            'San Francisco, CA',
-            'New York, NY',
-            'Austin, TX',
-            'Seattle, WA',
-            'Boston, MA',
-            'Chicago, IL',
-            'Los Angeles, CA',
-            'Denver, CO'
-          ][(reqIndex - 1) % 8],
+          requisitionName: jobTitle,
+          applicationStatus: statuses[Math.floor(Math.random() * statuses.length)],
+          hiringManager: hiringManager,
+          recruiter: recruiters[Math.floor(Math.random() * recruiters.length)],
+          appliedDate: `2024-${String(Math.floor(Math.random() * 12) + 1).padStart(2, '0')}-${String(Math.floor(Math.random() * 28) + 1).padStart(2, '0')}`,
+          location: location,
           country: 'United States',
-          avatar: i % 4 === 0 ? `https://images.pexels.com/photos/${1000000 + (reqIndex * 100) + i}/pexels-photo-${1000000 + (reqIndex * 100) + i}.jpeg?auto=compress&cs=tinysrgb&w=64&h=64&dpr=2` : undefined
+          avatar: appIndex % 4 === 0 ? `https://images.pexels.com/photos/${1000000 + (reqIndex * 100) + appIndex}/pexels-photo-${1000000 + (reqIndex * 100) + appIndex}.jpeg?auto=compress&cs=tinysrgb&w=64&h=64&dpr=2` : undefined
         });
       }
     }
     
-    return [...baseApplications, ...additionalApps];
+    return applications;
   };
 
-  const allApplications = generateMoreApplications(applications);
+  const allApplications = useMemo(() => generateApplications(), []);
+
   // Custom filter options
   const customFilterOptions = [
     'All Applications',
@@ -367,7 +203,7 @@ export const JobApplicationsView: React.FC<JobApplicationsViewProps> = ({ onGene
   const getFilteredApplications = () => {
     let filtered = allApplications;
 
-    // Apply custom filter logic (simplified for demo)
+    // Apply custom filter logic
     switch (customFilter) {
       case 'My Candidates':
         filtered = allApplications.filter(app => 
@@ -381,15 +217,15 @@ export const JobApplicationsView: React.FC<JobApplicationsViewProps> = ({ onGene
         break;
       case 'High Priority Reqs':
         filtered = allApplications.filter(app => 
-          ['REQ-2024-001', 'REQ-2024-002'].includes(app.requisitionId)
+          parseInt(app.requisitionId.split('-')[2]) <= 10
         );
         break;
       case 'Recent Applications':
         filtered = allApplications.filter(app => {
           const appDate = new Date(app.appliedDate);
-          const weekAgo = new Date();
-          weekAgo.setDate(weekAgo.getDate() - 7);
-          return appDate >= weekAgo;
+          const monthAgo = new Date();
+          monthAgo.setMonth(monthAgo.getMonth() - 1);
+          return appDate >= monthAgo;
         });
         break;
       case 'Pending Offers':
@@ -448,17 +284,65 @@ export const JobApplicationsView: React.FC<JobApplicationsViewProps> = ({ onGene
   const startIndex = (currentPage - 1) * requisitionsPerPage;
   const paginatedRequisitions = requisitionsMap.slice(startIndex, startIndex + requisitionsPerPage);
 
-  // Initialize visible applications count for each requisition
-  const getVisibleApplicationsCount = (requisitionId: string) => {
-    return visibleApplications[requisitionId] || applicationsPerLoad;
+  // Initialize loaded applications count for each requisition
+  const getLoadedApplicationsCount = (requisitionId: string) => {
+    return loadedApplications[requisitionId] || applicationsPerLoad;
   };
 
-  const loadMoreApplications = (requisitionId: string) => {
-    setVisibleApplications(prev => ({
-      ...prev,
-      [requisitionId]: (prev[requisitionId] || applicationsPerLoad) + applicationsPerLoad
-    }));
-  };
+  // Infinite scroll handler
+  const handleScroll = useCallback((requisitionId: string) => {
+    const container = applicationContainerRefs.current[requisitionId];
+    if (!container || isLoadingApplications[requisitionId]) return;
+
+    const { scrollTop, scrollHeight, clientHeight } = container;
+    const scrollPercentage = (scrollTop + clientHeight) / scrollHeight;
+
+    // Load more when scrolled to 80% of the container
+    if (scrollPercentage > 0.8) {
+      const requisition = requisitionsMap.find(req => req.id === requisitionId);
+      if (!requisition) return;
+
+      const filteredApps = getFilteredRequisitionApplications(requisition);
+      const currentLoaded = getLoadedApplicationsCount(requisitionId);
+      
+      if (currentLoaded < filteredApps.length) {
+        setIsLoadingApplications(prev => ({ ...prev, [requisitionId]: true }));
+        
+        // Simulate loading delay
+        setTimeout(() => {
+          setLoadedApplications(prev => ({
+            ...prev,
+            [requisitionId]: Math.min(currentLoaded + applicationsPerLoad, filteredApps.length)
+          }));
+          setIsLoadingApplications(prev => ({ ...prev, [requisitionId]: false }));
+        }, 500);
+      }
+    }
+  }, [requisitionsMap, applicationsPerLoad, isLoadingApplications]);
+
+  // Set up scroll listeners
+  useEffect(() => {
+    const containers = applicationContainerRefs.current;
+    const scrollHandlers: Record<string, () => void> = {};
+
+    Object.keys(containers).forEach(requisitionId => {
+      const container = containers[requisitionId];
+      if (container) {
+        const handler = () => handleScroll(requisitionId);
+        scrollHandlers[requisitionId] = handler;
+        container.addEventListener('scroll', handler);
+      }
+    });
+
+    return () => {
+      Object.keys(scrollHandlers).forEach(requisitionId => {
+        const container = containers[requisitionId];
+        if (container) {
+          container.removeEventListener('scroll', scrollHandlers[requisitionId]);
+        }
+      });
+    };
+  }, [expandedRequisitions, handleScroll]);
 
   const getStatusColor = (status: string) => {
     const colors: Record<string, string> = {
@@ -486,17 +370,36 @@ export const JobApplicationsView: React.FC<JobApplicationsViewProps> = ({ onGene
   };
 
   const toggleRequisitionExpansion = (requisitionId: string) => {
-    setExpandedRequisitions(prev => 
-      prev.includes(requisitionId)
-        ? prev.filter(id => id !== requisitionId)
-        : [...prev, requisitionId]
-    );
+    setExpandedRequisitions(prev => {
+      const isExpanding = !prev.includes(requisitionId);
+      if (isExpanding) {
+        // Initialize loaded applications count when expanding
+        setLoadedApplications(prevLoaded => ({
+          ...prevLoaded,
+          [requisitionId]: applicationsPerLoad
+        }));
+        return [...prev, requisitionId];
+      } else {
+        // Reset loaded applications count when collapsing
+        setLoadedApplications(prevLoaded => {
+          const newLoaded = { ...prevLoaded };
+          delete newLoaded[requisitionId];
+          return newLoaded;
+        });
+        return prev.filter(id => id !== requisitionId);
+      }
+    });
   };
 
   const handleRequisitionStatusFilter = (requisitionId: string, status: string) => {
     setSelectedRequisitionStatus(prev => ({
       ...prev,
       [requisitionId]: prev[requisitionId] === status ? '' : status
+    }));
+    // Reset loaded applications when filter changes
+    setLoadedApplications(prev => ({
+      ...prev,
+      [requisitionId]: applicationsPerLoad
     }));
   };
 
@@ -523,7 +426,9 @@ export const JobApplicationsView: React.FC<JobApplicationsViewProps> = ({ onGene
 
   const toggleAllApplicationsInRequisition = (requisition: Requisition) => {
     const filteredApps = getFilteredRequisitionApplications(requisition);
-    const appIds = filteredApps.map(app => app.id);
+    const loadedCount = getLoadedApplicationsCount(requisition.id);
+    const visibleApps = filteredApps.slice(0, loadedCount);
+    const appIds = visibleApps.map(app => app.id);
     const currentSelected = selectedApplications[requisition.id] || [];
     const allSelected = appIds.every(id => currentSelected.includes(id));
 
@@ -535,8 +440,9 @@ export const JobApplicationsView: React.FC<JobApplicationsViewProps> = ({ onGene
 
   const goToPage = (page: number) => {
     setCurrentPage(page);
-    // Reset visible applications when changing pages
-    setVisibleApplications({});
+    // Reset loaded applications when changing pages
+    setLoadedApplications({});
+    setExpandedRequisitions([]);
   };
 
   const getPaginationRange = () => {
@@ -597,11 +503,12 @@ export const JobApplicationsView: React.FC<JobApplicationsViewProps> = ({ onGene
         {paginatedRequisitions.map((requisition) => {
           const isExpanded = expandedRequisitions.includes(requisition.id);
           const filteredApps = getFilteredRequisitionApplications(requisition);
-          const visibleCount = getVisibleApplicationsCount(requisition.id);
-          const visibleApps = filteredApps.slice(0, visibleCount);
-          const hasMoreApps = visibleCount < filteredApps.length;
+          const loadedCount = getLoadedApplicationsCount(requisition.id);
+          const visibleApps = filteredApps.slice(0, loadedCount);
+          const hasMoreApps = loadedCount < filteredApps.length;
           const selectedStatus = selectedRequisitionStatus[requisition.id];
           const selectedApps = selectedApplications[requisition.id] || [];
+          const isLoading = isLoadingApplications[requisition.id];
 
           return (
             <div key={requisition.id} className="bg-white rounded-lg shadow-sm border border-gray-200">
@@ -661,8 +568,8 @@ export const JobApplicationsView: React.FC<JobApplicationsViewProps> = ({ onGene
                     </div>
                   </div>
 
-                  {/* Applications Table */}
-                  <div className="overflow-x-auto">
+                  {/* Applications Table with Infinite Scroll */}
+                  <div className="overflow-hidden">
                     {/* Sticky Action Bar - appears when applications are selected */}
                     {selectedApps.length > 0 && (
                       <div className="sticky top-0 z-10 bg-blue-50 border-b border-blue-200 px-4 py-3">
@@ -680,97 +587,108 @@ export const JobApplicationsView: React.FC<JobApplicationsViewProps> = ({ onGene
                       </div>
                     )}
                     
-                    <table className="w-full">
-                      <thead>
-                        <tr className="border-b border-gray-200 bg-gray-50">
-                          <th className="w-12 py-3 px-4">
-                            <input
-                              type="checkbox"
-                              checked={visibleApps.length > 0 && visibleApps.every(app => selectedApps.includes(app.id))}
-                              onChange={() => toggleAllApplicationsInRequisition(requisition)}
-                              className="rounded border-gray-300"
-                            />
-                          </th>
-                          <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">Application ID</th>
-                          <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">Candidate Name</th>
-                          <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">Application Status</th>
-                          <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">Recruiter</th>
-                          <th className="w-12"></th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {visibleApps.map((app, index) => (
-                          <tr 
-                            key={app.id} 
-                            className={`hover:bg-gray-50 transition-colors ${
-                              index < visibleApps.length - 1 ? 'border-b border-gray-100' : ''
-                            }`}
-                          >
-                            <td className="py-3 px-4">
+                    {/* Scrollable Applications Container */}
+                    <div 
+                      ref={(el) => applicationContainerRefs.current[requisition.id] = el}
+                      className="max-h-96 overflow-y-auto"
+                      style={{ scrollBehavior: 'smooth' }}
+                    >
+                      <table className="w-full">
+                        <thead className="sticky top-0 bg-gray-50 z-5">
+                          <tr className="border-b border-gray-200">
+                            <th className="w-12 py-3 px-4">
                               <input
                                 type="checkbox"
-                                checked={selectedApps.includes(app.id)}
-                                onChange={() => toggleApplicationSelection(requisition.id, app.id)}
+                                checked={visibleApps.length > 0 && visibleApps.every(app => selectedApps.includes(app.id))}
+                                onChange={() => toggleAllApplicationsInRequisition(requisition)}
                                 className="rounded border-gray-300"
                               />
-                            </td>
-                            <td className="py-3 px-4">
-                              <span className="font-mono text-sm text-blue-600">{app.id}</span>
-                            </td>
-                            <td className="py-3 px-4">
-                              <div className="flex items-center space-x-3">
-                                {app.avatar ? (
-                                  <img
-                                    src={app.avatar}
-                                    alt={app.candidateName}
-                                    className="w-8 h-8 rounded-full object-cover"
-                                  />
-                                ) : (
-                                  <div className="w-8 h-8 bg-indigo-500 rounded-full flex items-center justify-center">
-                                    <span className="text-white text-xs font-medium">
-                                      {getInitials(app.candidateName)}
-                                    </span>
-                                  </div>
-                                )}
-                                <div>
-                                  <div className="text-sm font-medium text-gray-900">
-                                    {app.candidateName} ({app.candidateId})
-                                  </div>
-                                  <div className="text-xs text-gray-500">{app.email}</div>
-                                </div>
-                              </div>
-                            </td>
-                            <td className="py-3 px-4">
-                              <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(app.applicationStatus)}`}>
-                                {app.applicationStatus}
-                              </span>
-                            </td>
-                            <td className="py-3 px-4">
-                              <span className="text-sm text-gray-900">{app.recruiter}</span>
-                            </td>
-                            <td className="py-3 px-4">
-                              <button className="text-gray-400 hover:text-gray-600 transition-colors">
-                                <Eye className="w-4 h-4" />
-                              </button>
-                            </td>
+                            </th>
+                            <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">Application ID</th>
+                            <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">Candidate Name</th>
+                            <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">Application Status</th>
+                            <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">Recruiter</th>
+                            <th className="w-12"></th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+                        </thead>
+                        <tbody>
+                          {visibleApps.map((app, index) => (
+                            <tr 
+                              key={app.id} 
+                              className={`hover:bg-gray-50 transition-colors ${
+                                index < visibleApps.length - 1 ? 'border-b border-gray-100' : ''
+                              }`}
+                            >
+                              <td className="py-3 px-4">
+                                <input
+                                  type="checkbox"
+                                  checked={selectedApps.includes(app.id)}
+                                  onChange={() => toggleApplicationSelection(requisition.id, app.id)}
+                                  className="rounded border-gray-300"
+                                />
+                              </td>
+                              <td className="py-3 px-4">
+                                <span className="font-mono text-sm text-blue-600">{app.id}</span>
+                              </td>
+                              <td className="py-3 px-4">
+                                <div className="flex items-center space-x-3">
+                                  {app.avatar ? (
+                                    <img
+                                      src={app.avatar}
+                                      alt={app.candidateName}
+                                      className="w-8 h-8 rounded-full object-cover"
+                                    />
+                                  ) : (
+                                    <div className="w-8 h-8 bg-indigo-500 rounded-full flex items-center justify-center">
+                                      <span className="text-white text-xs font-medium">
+                                        {getInitials(app.candidateName)}
+                                      </span>
+                                    </div>
+                                  )}
+                                  <div>
+                                    <div className="text-sm font-medium text-gray-900">
+                                      {app.candidateName} ({app.candidateId})
+                                    </div>
+                                    <div className="text-xs text-gray-500">{app.email}</div>
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="py-3 px-4">
+                                <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(app.applicationStatus)}`}>
+                                  {app.applicationStatus}
+                                </span>
+                              </td>
+                              <td className="py-3 px-4">
+                                <span className="text-sm text-gray-900">{app.recruiter}</span>
+                              </td>
+                              <td className="py-3 px-4">
+                                <button className="text-gray-400 hover:text-gray-600 transition-colors">
+                                  <Eye className="w-4 h-4" />
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
 
-                  {/* Load More Button */}
-                  {hasMoreApps && (
-                    <div className="p-4 text-center border-t border-gray-200">
-                      <button
-                        onClick={() => loadMoreApplications(requisition.id)}
-                        className="px-4 py-2 text-sm text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
-                      >
-                        Load More Applications ({filteredApps.length - visibleCount} remaining)
-                      </button>
+                      {/* Loading indicator */}
+                      {isLoading && (
+                        <div className="p-4 text-center">
+                          <div className="inline-flex items-center space-x-2 text-gray-600">
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                            <span className="text-sm">Loading more applications...</span>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* End of list indicator */}
+                      {!hasMoreApps && !isLoading && visibleApps.length > 0 && (
+                        <div className="p-4 text-center text-sm text-gray-500">
+                          Showing all {filteredApps.length} applications
+                        </div>
+                      )}
                     </div>
-                  )}
-
+                  </div>
                 </div>
               )}
             </div>
@@ -840,7 +758,6 @@ export const JobApplicationsView: React.FC<JobApplicationsViewProps> = ({ onGene
           </p>
         </div>
       )}
-
     </div>
   );
 };
