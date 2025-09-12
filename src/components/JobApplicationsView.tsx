@@ -585,14 +585,6 @@ export const JobApplicationsView: React.FC<JobApplicationsViewProps> = ({ onGene
             <Filter className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 pointer-events-none" />
           </div>
         </div>
-        
-        <button
-          onClick={onGenerate}
-          className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Generate
-        </button>
       </div>
 
       {/* Results Summary */}
@@ -651,7 +643,6 @@ export const JobApplicationsView: React.FC<JobApplicationsViewProps> = ({ onGene
                 <div className="border-t border-gray-200">
                   {/* Status Cards */}
                   <div className="p-4 bg-gray-50">
-                    <h4 className="text-sm font-medium text-gray-900 mb-3">Application Status</h4>
                     <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
                       {Object.entries(requisition.statusCounts).map(([status, count]) => (
                         <button
@@ -668,11 +659,6 @@ export const JobApplicationsView: React.FC<JobApplicationsViewProps> = ({ onGene
                         </button>
                       ))}
                     </div>
-                    {selectedStatus && (
-                      <div className="mt-3">
-                        <span className="text-sm text-gray-600">Showing {filteredApps.length} applications</span>
-                      </div>
-                    )}
                   </div>
 
                   {/* Applications Table */}
@@ -855,24 +841,6 @@ export const JobApplicationsView: React.FC<JobApplicationsViewProps> = ({ onGene
         </div>
       )}
 
-      {/* Sticky Action Bar */}
-      {Object.values(selectedApplications).some(apps => apps.length > 0) && (
-        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-50">
-          <div className="max-w-7xl mx-auto px-6 py-4">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-gray-900">
-                {Object.values(selectedApplications).reduce((total, apps) => total + apps.length, 0)} Applicants Selected
-              </span>
-              <button
-                onClick={onGenerate}
-                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-              >
-                Generate
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
