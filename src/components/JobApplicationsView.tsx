@@ -581,7 +581,7 @@ export const JobApplicationsView: React.FC<JobApplicationsViewProps> = ({ onGene
               }`}
             >
               <List className="w-4 h-4 mr-2" />
-              Flat List
+              Job Applications
             </button>
             <button
               onClick={() => handleViewModeChange('accordion')}
@@ -592,7 +592,7 @@ export const JobApplicationsView: React.FC<JobApplicationsViewProps> = ({ onGene
               }`}
             >
               <Grid3X3 className="w-4 h-4 mr-2" />
-              By Requisition
+              Requisition
             </button>
           </div>
         </div>
@@ -641,12 +641,14 @@ export const JobApplicationsView: React.FC<JobApplicationsViewProps> = ({ onGene
                     </div>
                     
                     {showAllStatusChips && statusEntries.length > maxVisible && (
-                      <button
-                        onClick={() => setShowAllStatusChips(false)}
-                        className="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
-                      >
-                        Show Less
-                      </button>
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          onClick={() => setShowAllStatusChips(false)}
+                          className="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
+                        >
+                          Show Less
+                        </button>
+                      </div>
                     )}
                   </>
                 );
