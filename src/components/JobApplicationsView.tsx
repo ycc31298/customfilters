@@ -641,14 +641,12 @@ export const JobApplicationsView: React.FC<JobApplicationsViewProps> = ({ onGene
                     </div>
                     
                     {showAllStatusChips && statusEntries.length > maxVisible && (
-                      <div className="flex justify-center">
-                        <button
-                          onClick={() => setShowAllStatusChips(false)}
-                          className="text-sm text-blue-600 hover:text-blue-700 font-medium"
-                        >
-                          Show Less
-                        </button>
-                      </div>
+                      <button
+                        onClick={() => setShowAllStatusChips(false)}
+                        className="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
+                      >
+                        Show Less
+                      </button>
                     )}
                   </>
                 );
@@ -659,11 +657,6 @@ export const JobApplicationsView: React.FC<JobApplicationsViewProps> = ({ onGene
           {/* Results Summary */}
           <div className="mb-4 text-sm text-gray-600">
             Showing {paginatedFlatApplications.length} of {flatViewApplications.length} applications
-            {selectedStatusFilters.length > 0 && (
-              <span className="ml-2">
-                (filtered by {selectedStatusFilters.length} status{selectedStatusFilters.length !== 1 ? 'es' : ''})
-              </span>
-            )}
           </div>
 
           {/* Sticky Action Bar */}
