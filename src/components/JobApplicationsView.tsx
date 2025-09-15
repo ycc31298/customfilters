@@ -681,6 +681,7 @@ export const JobApplicationsView: React.FC<JobApplicationsViewProps> = ({ onGene
                 </button>
               </div>
             </div>
+          )}
 
           {/* Flat Applications Table */}
           <div className="bg-white rounded-lg shadow-sm border border-gray-200">
