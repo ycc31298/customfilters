@@ -46,6 +46,7 @@ export const JobApplicationsView: React.FC<JobApplicationsViewProps> = ({ onGene
   const [loadedApplications, setLoadedApplications] = useState<Record<string, number>>({});
   const [applicationsPerLoad] = useState(20);
   const [isLoadingApplications, setIsLoadingApplications] = useState<Record<string, boolean>>({});
+  const [showAllStatusChips, setShowAllStatusChips] = useState(false);
 
   // Refs for infinite scroll
   const applicationContainerRefs = useRef<Record<string, HTMLDivElement | null>>({});
@@ -535,6 +536,7 @@ export const JobApplicationsView: React.FC<JobApplicationsViewProps> = ({ onGene
     setFlatSelectedApplications([]);
     setSelectedStatusFilters([]);
     setExpandedRequisitions([]);
+    setShowAllStatusChips(false);
   };
 
   return (
@@ -601,23 +603,56 @@ export const JobApplicationsView: React.FC<JobApplicationsViewProps> = ({ onGene
         <>
           {/* Status Filter Chips */}
           <div className="mb-6">
-            <div className="flex flex-wrap gap-2">
-              {Object.entries(getStatusCounts()).map(([status, count]) => (
-                <button
-                  key={status}
-                  onClick={() => toggleStatusFilter(status)}
-                  className={`inline-flex items-center px-3 py-2 rounded-full text-sm font-medium transition-colors ${
-                    selectedStatusFilters.includes(status)
-                      ? 'bg-blue-100 text-blue-800 ring-2 ring-blue-200'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
-                >
-                  {status}
-                  <span className="ml-2 px-2 py-0.5 bg-white/50 rounded-full text-xs">
-                    {count}
-                  </span>
-                </button>
-              ))}
+            <div className="space-y-3">
+              {(() => {
+                const statusEntries = Object.entries(getStatusCounts());
+                const maxVisible = 6;
+                const visibleStatuses = showAllStatusChips ? statusEntries : statusEntries.slice(0, maxVisible);
+                const hiddenCount = statusEntries.length - maxVisible;
+                
+                return (
+                  <>
+                    <div className="flex flex-wrap gap-2">
+                      {visibleStatuses.map(([status, count]) => (
+                        <button
+                          key={status}
+                          onClick={() => toggleStatusFilter(status)}
+                          className={`inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                            selectedStatusFilters.includes(status)
+                              ? 'bg-blue-100 text-blue-800 ring-2 ring-blue-200'
+                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          }`}
+                        >
+                          {status}
+                          <span className="ml-2 px-1.5 py-0.5 bg-white/60 rounded-full text-xs font-semibold">
+                            {count}
+                          </span>
+                        </button>
+                      ))}
+                      
+                      {!showAllStatusChips && hiddenCount > 0 && (
+                        <button
+                          onClick={() => setShowAllStatusChips(true)}
+                          className="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
+                        >
+                          +{hiddenCount} More
+                        </button>
+                      )}
+                    </div>
+                    
+                    {showAllStatusChips && statusEntries.length > maxVisible && (
+                      <div className="flex justify-center">
+                        <button
+                          onClick={() => setShowAllStatusChips(false)}
+                          className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+                        >
+                          Show Less
+                        </button>
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
             </div>
           </div>
 
@@ -646,7 +681,6 @@ export const JobApplicationsView: React.FC<JobApplicationsViewProps> = ({ onGene
                 </button>
               </div>
             </div>
-          )}
 
           {/* Flat Applications Table */}
           <div className="bg-white rounded-lg shadow-sm border border-gray-200">
