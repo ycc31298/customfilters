@@ -47,8 +47,6 @@ export const JobApplicationsView: React.FC<JobApplicationsViewProps> = ({ onGene
   const [applicationsPerLoad] = useState(20);
   const [isLoadingApplications, setIsLoadingApplications] = useState<Record<string, boolean>>({});
   const [showAllStatusChips, setShowAllStatusChips] = useState(false);
-  const [showAllRequisitionStatusChips, setShowAllRequisitionStatusChips] = useState(false);
-  const [selectedRequisitionStatusFilters, setSelectedRequisitionStatusFilters] = useState<string[]>([]);
 
   // Refs for infinite scroll
   const applicationContainerRefs = useRef<Record<string, HTMLDivElement | null>>({});
@@ -288,13 +286,7 @@ export const JobApplicationsView: React.FC<JobApplicationsViewProps> = ({ onGene
 
   // Group applications by requisition (for accordion view)
   const requisitionsMap = useMemo(() => {
-    let filtered = getFilteredApplications().filter(app => eligibleStatuses.includes(app.applicationStatus));
-    
-    // Apply requisition status filters
-    if (selectedRequisitionStatusFilters.length > 0) {
-      filtered = filtered.filter(app => selectedRequisitionStatusFilters.includes(app.applicationStatus));
-    }
-    
+    const filtered = getFilteredApplications().filter(app => eligibleStatuses.includes(app.applicationStatus));
     const map = new Map<string, Requisition>();
     
     filtered.forEach(app => {
@@ -314,19 +306,7 @@ export const JobApplicationsView: React.FC<JobApplicationsViewProps> = ({ onGene
     });
     
     return Array.from(map.values());
-  }, [searchTerm, customFilter, selectedRequisitionStatusFilters]);
-
-  // Get status counts for requisition view
-  const getRequisitionStatusCounts = () => {
-    const filtered = getFilteredApplications().filter(app => eligibleStatuses.includes(app.applicationStatus));
-    const counts: Record<string, number> = {};
-    
-    filtered.forEach(app => {
-      counts[app.applicationStatus] = (counts[app.applicationStatus] || 0) + 1;
-    });
-    
-    return counts;
-  };
+  }, [searchTerm, customFilter]);
 
   // Pagination for requisitions (accordion view)
   const totalPages = Math.ceil(requisitionsMap.length / requisitionsPerPage);
@@ -523,15 +503,6 @@ export const JobApplicationsView: React.FC<JobApplicationsViewProps> = ({ onGene
     setCurrentPage(1); // Reset to first page when filter changes
   };
 
-  const toggleRequisitionStatusFilter = (status: string) => {
-    setSelectedRequisitionStatusFilters(prev => 
-      prev.includes(status)
-        ? prev.filter(s => s !== status)
-        : [...prev, status]
-    );
-    setCurrentPage(1); // Reset to first page when filter changes
-  };
-
   const goToPage = (page: number) => {
     setCurrentPage(page);
     // Reset loaded applications when changing pages
@@ -564,10 +535,8 @@ export const JobApplicationsView: React.FC<JobApplicationsViewProps> = ({ onGene
     setSelectedApplications({});
     setFlatSelectedApplications([]);
     setSelectedStatusFilters([]);
-    setSelectedRequisitionStatusFilters([]);
     setExpandedRequisitions([]);
     setShowAllStatusChips(false);
-    setShowAllRequisitionStatusChips(false);
   };
 
   return (
@@ -825,59 +794,6 @@ export const JobApplicationsView: React.FC<JobApplicationsViewProps> = ({ onGene
       {/* Accordion View */}
       {viewMode === 'accordion' && (
         <>
-          {/* Status Filter Chips for Requisition View */}
-          <div className="mb-6">
-            <div className="space-y-3">
-              {(() => {
-                const statusEntries = Object.entries(getRequisitionStatusCounts());
-                const maxVisible = 6;
-                const visibleStatuses = showAllRequisitionStatusChips ? statusEntries : statusEntries.slice(0, maxVisible);
-                const hiddenCount = statusEntries.length - maxVisible;
-                
-                return (
-                  <>
-                    <div className="flex flex-wrap gap-2">
-                      {visibleStatuses.map(([status, count]) => (
-                        <button
-                          key={status}
-                          onClick={() => toggleRequisitionStatusFilter(status)}
-                          className={`inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                            selectedRequisitionStatusFilters.includes(status)
-                              ? 'bg-blue-100 text-blue-800 ring-2 ring-blue-200'
-                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                          }`}
-                        >
-                          {status}
-                          <span className="ml-2 px-1.5 py-0.5 bg-white/60 rounded-full text-xs font-semibold">
-                            {count}
-                          </span>
-                        </button>
-                      ))}
-                      
-                      {!showAllRequisitionStatusChips && hiddenCount > 0 && (
-                        <button
-                          onClick={() => setShowAllRequisitionStatusChips(true)}
-                          className="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
-                        >
-                          +{hiddenCount} More
-                        </button>
-                      )}
-                      
-                      {showAllRequisitionStatusChips && statusEntries.length > maxVisible && (
-                        <button
-                          onClick={() => setShowAllRequisitionStatusChips(false)}
-                          className="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
-                        >
-                          Show Less
-                        </button>
-                      )}
-                    </div>
-                  </>
-                );
-              })()}
-            </div>
-          </div>
-
           {/* Results Summary */}
           <div className="mb-4 text-sm text-gray-600">
             Showing {paginatedRequisitions.length} of {requisitionsMap.length} requisitions with {requisitionsMap.reduce((sum, req) => sum + req.applications.length, 0)} total applications
