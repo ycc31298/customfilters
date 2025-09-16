@@ -1,6 +1,6 @@
 import React from 'react';
 import { useState } from 'react';
-import { Users, Briefcase, FileText, Settings, Plus } from 'lucide-react';
+import { Users, Briefcase, FileText, Settings, Plus, X } from 'lucide-react';
 import { WorkforceView } from './components/WorkforceView';
 import { JobApplicationsView } from './components/JobApplicationsView';
 import { GeneratedDocsView } from './components/GeneratedDocsView';
@@ -13,6 +13,7 @@ function App() {
   const [showGenerateModal, setShowGenerateModal] = useState(false);
   const [showProgressModal, setShowProgressModal] = useState(false);
   const [showConfigDrawer, setShowConfigDrawer] = useState(false);
+  const [showCustomFiltersPage, setShowCustomFiltersPage] = useState(false);
 
   const handleGenerate = () => {
     setShowGenerateModal(false);
@@ -22,6 +23,11 @@ function App() {
   const handleProgressComplete = () => {
     setShowProgressModal(false);
     setActiveTab('generated');
+  };
+
+  const handleOpenCustomFilters = () => {
+    setShowCustomFiltersPage(true);
+    setShowConfigDrawer(false);
   };
 
   const tabs = [
@@ -110,7 +116,28 @@ function App() {
       <ConfigurationsDrawer
         isOpen={showConfigDrawer}
         onToggle={() => setShowConfigDrawer(!showConfigDrawer)}
+        onOpenCustomFilters={handleOpenCustomFilters}
       />
+
+      {/* Custom Filters Page */}
+      {showCustomFiltersPage && (
+        <div className="fixed inset-0 bg-white z-50">
+          <div className="h-full flex flex-col">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <h1 className="text-2xl font-bold text-gray-900">Custom Filters</h1>
+              <button
+                onClick={() => setShowCustomFiltersPage(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            <div className="flex-1 p-6">
+              <p className="text-gray-600">Custom Filters page content will go here.</p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
