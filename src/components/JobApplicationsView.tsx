@@ -105,3 +105,4 @@ export const JobApplicationsView = ({ onGenerate }: JobApplicationsViewProps) =>
       </div>
     </div>
   );
+}
