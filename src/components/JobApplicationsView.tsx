@@ -5,7 +5,7 @@ interface JobApplicationsViewProps {
   onGenerate: () => void;
 }
 
-export default function JobApplicationsView({ onGenerate }: JobApplicationsViewProps) {
+export const JobApplicationsView = ({ onGenerate }: JobApplicationsViewProps) => {
   return (
     <div className="p-6">
       <div className="flex items-center justify-between mb-6">
@@ -105,4 +105,3 @@ export default function JobApplicationsView({ onGenerate }: JobApplicationsViewP
       </div>
     </div>
   );
-}
